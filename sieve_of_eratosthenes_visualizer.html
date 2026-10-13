@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sieve of Eratosthenes Visualizer - ค่าย 1 สอวน. คอมพิวเตอร์</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tone.js for synthesized audio effects -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Google Fonts Prompt & Fira Code -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Prompt', sans-serif; }
+        code, pre, .font-mono { font-family: 'Fira Code', monospace; }
+        .code-highlight {
+            background-color: rgba(14, 165, 233, 0.28) !important;
+            border-left: 4px solid #38bdf8 !important;
+            color: #ffffff !important;
+            font-weight: 600;
+            padding-left: 8px;
+            transition: all 0.15s ease-in-out;
+        }
+        .grid-num-cell {
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        /* Custom scrollbar styling */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col antialiased selection:bg-cyan-500 selection:text-white">
+
+    <header class="border-b border-slate-800 bg-slate-900/90 backdrop-blur sticky top-0 z-40 px-4 py-3">
+        <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 via-emerald-600 to-cyan-500 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                    <i data-lucide="filter" class="w-5 h-5 text-white"></i>
+                </div>
+                <div>
+                    <h1 class="text-base md:text-lg font-bold text-white flex items-center gap-2">
+                        เครื่องมือจำลองตะแกรงของเอราทอสเทนีส (Sieve of Eratosthenes Visualizer)
+                        <span id="badge-complexity" class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">O(N log log N)</span>
+                    </h1>
+                    <p class="text-xs text-slate-400">ค่ายโอลิมปิกวิชาการ สอวน. คอมพิวเตอร์ ค่ายที่ 1 — Precomputation & Prime Sieve</p>
+                </div>
+            </div>
+
+            <!-- Algorithm Mode Switcher & Audio Controls -->
+            <div class="flex items-center gap-2 bg-slate-800/90 p-1.5 rounded-xl border border-slate-700">
+                <div class="flex flex-wrap gap-1 bg-slate-950 p-1 rounded-lg border border-slate-700/60 text-xs">
+                    <button id="btn-mode-optimized" class="px-2.5 py-1 font-semibold rounded-md bg-emerald-600 text-white shadow-md shadow-emerald-500/30 transition-all flex items-center gap-1.5">
+                        <i data-lucide="zap" class="w-3.5 h-3.5"></i> 1. Optimized (เริ่มที่ p²)
+                    </button>
+                    <button id="btn-mode-naive" class="px-2.5 py-1 font-semibold rounded-md text-slate-400 hover:text-white transition-all flex items-center gap-1.5">
+                        <i data-lucide="clock" class="w-3.5 h-3.5"></i> 2. Standard (เริ่มที่ 2p)
+                    </button>
+                </div>
+                <button id="btn-toggle-sound" title="เปิด/ปิดเสียงเอฟเฟกต์" class="p-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-slate-700/60 transition-all ml-1">
+                    <i data-lucide="volume-2" id="sound-icon" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 space-y-6">
+        <!-- Input & Controls Section -->
+        <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 md:p-5 shadow-xl backdrop-blur-sm">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-end">
+                <!-- Integer Input -->
+                <div class="lg:col-span-3">
+                    <label class="block text-xs font-medium text-slate-300 mb-1 flex items-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400"></span> ขอบเขตค่าสูงสุด N (ค้นหาจำนวนเฉพาะ 2 ถึง N):
+                    </label>
+                    <div class="relative">
+                        <input type="number" id="input-n" value="100" min="10" max="200" step="5" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 font-mono">
+                        <span id="badge-sqrt-val" class="absolute right-3 top-2 text-xs font-mono text-emerald-400/80 bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-800/40">√N = 10</span>
+                    </div>
+                </div>
+
+                <!-- Presets -->
+                <div class="lg:col-span-9 flex flex-wrap items-center justify-start lg:justify-end gap-2">
+                    <span class="text-xs text-slate-400 mr-1 flex items-center gap-1">
+                        <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-400"></i> เลือกขนาดตัวอย่าง:
+                    </span>
+                    <button class="preset-btn bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs px-2.5 py-1.5 rounded-xl transition-all" data-n="30">N = 30 (Quick)</button>
+                    <button class="preset-btn bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs px-2.5 py-1.5 rounded-xl transition-all" data-n="50">N = 50</button>
+                    <button class="preset-btn bg-slate-800 hover:bg-slate-700 border border-slate-700 text-emerald-300 border-emerald-700/50 text-xs px-2.5 py-1.5 rounded-xl transition-all" data-n="100">N = 100 (Standard)</button>
+                    <button class="preset-btn bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs px-2.5 py-1.5 rounded-xl transition-all" data-n="120">N = 120</button>
+                    <button class="preset-btn bg-slate-800 hover:bg-slate-700 border border-slate-700 text-cyan-300 border-cyan-700/40 text-xs px-2.5 py-1.5 rounded-xl transition-all" data-n="150">N = 150</button>
+                </div>
+            </div>
+
+            <!-- Playback Controls -->
+            <div class="mt-4 pt-4 border-t border-slate-800 flex flex-wrap items-center justify-between gap-3">
+                <div class="flex items-center gap-3 bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-800">
+                    <span class="text-xs text-slate-400">ความเร็วแอนิเมชัน:</span>
+                    <input type="range" id="slider-speed" min="50" max="1000" step="50" value="300" class="w-28 accent-emerald-500 cursor-pointer">
+                    <span id="speed-label" class="text-[11px] font-mono text-emerald-400">300ms</span>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <button id="btn-step" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white text-xs font-semibold py-2 px-3.5 rounded-xl flex items-center gap-1.5 transition-all">
+                        <i data-lucide="step-forward" class="w-4 h-4"></i> ทีละขั้นตอน (Step)
+                    </button>
+                    <button id="btn-play" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold py-2 px-4 rounded-xl flex items-center gap-1.5 shadow-lg shadow-emerald-600/30 transition-all">
+                        <i data-lucide="play" id="icon-play" class="w-4 h-4"></i> เริ่มจำลองอัตโนมัติ
+                    </button>
+                    <button id="btn-reset" class="bg-slate-800 hover:bg-rose-500/20 hover:text-rose-300 border border-slate-700 text-slate-300 text-xs font-semibold py-2 px-3 rounded-xl flex items-center gap-1.5 transition-all">
+                        <i data-lucide="rotate-ccw" class="w-4 h-4"></i> รีเซ็ต
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+            <!-- Left Column: Visualizer Board (7 cols) -->
+            <div class="lg:col-span-7 bg-slate-900/90 border border-slate-800 rounded-2xl p-5 md:p-6 shadow-xl flex flex-col justify-between space-y-5">
+                <div>
+                    <!-- Visualizer Title Strip -->
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+                        <div>
+                            <h2 id="viz-title" class="text-sm font-bold uppercase tracking-wider text-slate-200 flex items-center gap-2">
+                                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                                ตารางตะแกรงตัวเลข 1 ถึง N (Sieve Table)
+                            </h2>
+                            <p id="viz-subtitle" class="text-xs text-slate-400 mt-0.5">พิจารณาจำนวนเฉพาะ $p$ จาก 2 ถึง $\lfloor\sqrt{N}\rfloor$ แล้วตัดพหุคูณทั้งหมดออก</p>
+                        </div>
+                        <div class="flex items-center gap-2 text-xs bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-800 font-mono">
+                            <span class="text-slate-400">สเต็ปที่: <strong id="stat-step" class="text-emerald-400 text-sm">0 / 0</strong></span>
+                        </div>
+                    </div>
+
+                    <!-- Legend strip -->
+                    <div class="flex flex-wrap items-center gap-3 text-[11px] mb-3 bg-slate-950/80 p-2.5 rounded-xl border border-slate-800/80">
+                        <span class="flex items-center gap-1.5 text-slate-400">
+                            <span class="w-3 h-3 rounded bg-slate-800 border border-slate-700 inline-block"></span> รอตรวจ
+                        </span>
+                        <span class="flex items-center gap-1.5 text-amber-300">
+                            <span class="w-3 h-3 rounded bg-amber-500/30 border border-amber-400 inline-block"></span> จำนวนเฉพาะ p
+                        </span>
+                        <span class="flex items-center gap-1.5 text-cyan-300">
+                            <span class="w-3 h-3 rounded bg-cyan-500/30 border border-cyan-400 inline-block"></span> พหุคูณที่กำลังตัด
+                        </span>
+                        <span class="flex items-center gap-1.5 text-rose-400">
+                            <span class="w-3 h-3 rounded bg-rose-950/50 border border-rose-800/80 line-through inline-block"></span> ถูกตัดทิ้ง (ไม่ใช่เฉพาะ)
+                        </span>
+                        <span class="flex items-center gap-1.5 text-emerald-300">
+                            <span class="w-3 h-3 rounded bg-emerald-500/30 border border-emerald-400 inline-block"></span> จำนวนเฉพาะ (Prime)
+                        </span>
+                    </div>
+
+                    <!-- Number Grid Container -->
+                    <div class="bg-slate-950 rounded-xl border border-slate-800/90 p-4">
+                        <div id="sieve-grid" class="max-h-[340px] overflow-y-auto pr-1 grid grid-cols-5 sm:grid-cols-10 gap-1.5 text-center font-mono text-xs">
+                            <!-- Dynamically populated numbers 1..N -->
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <!-- Real-time Stats Grid -->
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                        <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800 text-center">
+                            <span class="text-[11px] text-slate-400 block font-medium">จำนวนเฉพาะปัจจุบัน (p)</span>
+                            <span id="stat-cur-p" class="text-base font-bold font-mono text-amber-300 mt-0.5 block">-</span>
+                        </div>
+                        <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800 text-center">
+                            <span class="text-[11px] text-slate-400 block font-medium">พหุคูณที่กำลังตัด (i)</span>
+                            <span id="stat-cur-i" class="text-base font-bold font-mono text-cyan-300 mt-0.5 block">-</span>
+                        </div>
+                        <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800 text-center">
+                            <span class="text-[11px] text-slate-400 block font-medium">จำนวนรอบตัดสะสม</span>
+                            <span id="stat-ops" class="text-base font-bold font-mono text-indigo-300 mt-0.5 block">0</span>
+                        </div>
+                        <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800 text-center">
+                            <span class="text-[11px] text-slate-400 block font-medium">จำนวนเฉพาะที่พบ (Primes)</span>
+                            <span id="stat-prime-count" class="text-base font-bold font-mono text-emerald-400 mt-0.5 block">0</span>
+                        </div>
+                    </div>
+
+                    <!-- Step Notification Banner -->
+                    <div id="status-banner" class="mt-3 p-3.5 rounded-xl bg-slate-950 border border-slate-800 flex items-start gap-3 transition-all">
+                        <div id="status-badge" class="mt-0.5 p-1.5 rounded-lg bg-emerald-500/20 text-emerald-400 shrink-0">
+                            <i data-lucide="info" class="w-4 h-4"></i>
+                        </div>
+                        <div class="flex-1">
+                            <h3 id="status-title" class="text-xs font-bold text-slate-200 mb-0.5">สถานะการทำงาน</h3>
+                            <p id="status-desc" class="text-xs text-slate-400 leading-relaxed">กดปุ่ม "เริ่มจำลองอัตโนมัติ" หรือ "ทีละขั้นตอน (Step)" เพื่อสังเกตขั้นตอนวิธี Sieve of Eratosthenes</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Synchronized C++ Code Panel (5 cols) -->
+            <div class="lg:col-span-5 bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col justify-between space-y-4">
+                <div>
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-3">
+                        <div class="flex items-center gap-2">
+                            <div class="flex gap-1.5">
+                                <span class="w-3 h-3 rounded-full bg-rose-500/80 inline-block"></span>
+                                <span class="w-3 h-3 rounded-full bg-amber-500/80 inline-block"></span>
+                                <span class="w-3 h-3 rounded-full bg-emerald-500/80 inline-block"></span>
+                            </div>
+                            <span id="code-filename" class="text-xs font-mono text-slate-400 font-semibold ml-2">sieve_optimized.cpp</span>
+                        </div>
+                        <span id="code-badge" class="text-[11px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Optimized Sieve</span>
+                    </div>
+
+                    <!-- C++ Code Display: Mode 1 (Optimized) -->
+                    <div id="code-box-optimized" class="font-mono text-xs leading-relaxed space-y-0.5 overflow-x-auto py-1">
+                        <div id="opt-line-1" class="px-2 py-0.5 rounded text-slate-400 transition-all"><span class="text-purple-400 font-semibold">void</span> <span class="text-blue-400">sieve</span>(<span class="text-purple-400 font-semibold">int</span> n) {</div>
+                        <div id="opt-line-2" class="px-2 py-0.5 rounded text-slate-400 transition-all">&nbsp;&nbsp;is_prime[<span class="text-amber-300">0</span>] = is_prime[<span class="text-amber-300">1</span>] = <span class="text-rose-400">false</span>;</div>
+                        <div id="opt-line-3" class="px-2 py-0.5 rounded text-slate-400 transition-all">&nbsp;&nbsp;<span class="text-purple-400 font-semibold">for</span> (<span class="text-purple-400 font-semibold">int</span> p = <span class="text-amber-300">2</span>; p * p &lt;= n; p++) {</div>
+                        <div id="opt-line-4" class="px-2 py-0.5 rounded text-slate-400 transition-all">&nbsp;&nbsp;&nbsp;&nbsp;<span class="text-purple-400 font-semibold">if</span> (is_prime[p]) {</div>
+                        <div id="opt-line-5" class="px-2 py-0.5 rounded text-slate-400 transition-all">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="text-purple-400 font-semibold">for</span> (<span class="text-purple-400 font-semibold">int</span> i = p * p; i &lt;= n; i += p) {</div>
+                        <div id="opt-line-6" class="px-2 py-0.5 rounded text-slate-400 transition-all">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;is_prime[i] = <span class="text-rose-400">false</span>; <span class="text-slate-500">// ตัดพหุคูณ</span></div>
+                        <div id="opt-line-7" class="px-2 py-0.5 rounded text-slate-400 transition-all">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}</div>
+                        <div id="opt-line-8" class="px-2 py-0.5 rounded text-slate-400 transition-all">&nbsp;&nbsp;&nbsp;&nbsp;}</div>
+                        <div id="opt-line-9" class="px-2 py-0.5 rounded text-slate-400 transition-all">&nbsp;&nbsp;}</div>
+                        <div id="opt-line-10" class="px-2 py-0.5 rounded text-slate-400 transition-all">}</div>
+                    </div>
+
+                    <!-- C++ Code Display: Mode 2 (Naive) -->
+                    <div id="code-box-naive" class="hidden font-mono text-xs leading-relaxed space-y-0.5 overflow-x-auto py-1">
+                        <div id="naive-line-1" class="px-2 py-0.5 rounded text-slate-400 transition-all"><span class="text-purple-400 font-semibold">void</span> <span class="text-blue-400">sieveNaive</span>(<span class="text-purple-400 font-semibold">int</span> n) {</div>
+                        <div id="naive-line-2" class="px-2 py-0.5 rounded text-slate-400 transition-all">&nbsp;&nbsp;is_prime[<span class="text-amber-300">0</span>] = is_prime[<span class="text-amber-300">1</span>] = <span class="text-rose-400">false</span>;</div>
+                        <div id="naive-line-3" class="px-2 py-0.5 rounded text-slate-400 transition-all">&nbsp;&nbsp;<span class="text-purple-400 font-semibold">for</span> (<span class="text-purple-400 font-semibold">int</span> p = <span class="text-amber-300">2</span>; p &lt;= n; p++) {</div>
+                        <div id="naive-line-4" class="px-2 py-0.5 rounded text-slate-400 transition-all">&nbsp;&nbsp;&nbsp;&nbsp;<span class="text-purple-400 font-semibold">if</span> (is_prime[p]) {</div>
+                        <div id="naive-line-5" class="px-2 py-0.5 rounded text-slate-400 transition-all">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="text-purple-400 font-semibold">for</span> (<span class="text-purple-400 font-semibold">int</span> i = <span class="text-amber-300">2</span> * p; i &lt;= n; i += p) {</div>
+                        <div id="naive-line-6" class="px-2 py-0.5 rounded text-slate-400 transition-all">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;is_prime[i] = <span class="text-rose-400">false</span>;</div>
+                        <div id="naive-line-7" class="px-2 py-0.5 rounded text-slate-400 transition-all">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}</div>
+                        <div id="naive-line-8" class="px-2 py-0.5 rounded text-slate-400 transition-all">&nbsp;&nbsp;&nbsp;&nbsp;}</div>
+                        <div id="naive-line-9" class="px-2 py-0.5 rounded text-slate-400 transition-all">&nbsp;&nbsp;}</div>
+                        <div id="naive-line-10" class="px-2 py-0.5 rounded text-slate-400 transition-all">}</div>
+                    </div>
+
+                    <!-- Primes Result Collector Box -->
+                    <div class="mt-4 bg-slate-950 p-3 rounded-xl border border-slate-800">
+                        <div class="flex items-center justify-between text-xs font-semibold text-slate-300 mb-2">
+                            <span class="flex items-center gap-1.5">
+                                <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-emerald-400"></i>
+                                รายการจำนวนเฉพาะที่พบ (Primes Output)
+                            </span>
+                            <span id="badge-prime-ratio" class="text-[11px] font-mono text-emerald-400 bg-emerald-950/60 border border-emerald-800/40 px-2 py-0.5 rounded">0 ตัว</span>
+                        </div>
+                        <div id="prime-results-list" class="max-h-[110px] overflow-y-auto font-mono text-xs flex flex-wrap gap-1.5 text-slate-300">
+                            <!-- Populated with badges -->
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pt-3 border-t border-slate-800 flex items-center justify-between text-[11px] text-slate-400">
+                    <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded bg-emerald-400"></span> ไฮไลต์บรรทัด = ลูปที่กำลังประมวลผล</span>
+                    <span class="font-mono text-emerald-400 font-medium">สอวน. คอมพิวเตอร์ ค่าย 1</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Code Export Box -->
+        <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl">
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+                <div class="flex items-center gap-2">
+                    <div class="p-1.5 rounded-lg bg-emerald-500/20 text-emerald-400">
+                        <i data-lucide="code-2" class="w-4 h-4"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-sm font-bold uppercase tracking-wider text-slate-200">
+                            ซอร์สโค้ดภาษา C++ สำหรับใช้งานในการแข่งขัน (Contest Ready)
+                        </h2>
+                        <p class="text-xs text-slate-400">ฟังก์ชัน Sieve of Eratosthenes แบบ $O(N \log \log N)$ พร้อม Fast I/O และ vector&lt;bool&gt;</p>
+                    </div>
+                </div>
+                <button id="btn-copy-code" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold py-1.5 px-3.5 rounded-xl flex items-center gap-1.5 shadow-lg shadow-emerald-600/20 transition-all">
+                    <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                    <span id="copy-btn-text">คัดลอกโค้ด C++</span>
+                </button>
+            </div>
+
+            <!-- Code Container Box -->
+            <div class="relative bg-slate-950 border border-slate-800 rounded-xl p-4 font-mono text-xs overflow-x-auto text-slate-300">
+                <pre id="display-code-block" class="whitespace-pre"><code>// กำลังโหลดโค้ด...</code></pre>
+            </div>
+            <div id="copy-toast" class="hidden mt-2.5 text-xs text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-lg flex items-center gap-1.5">
+                <i data-lucide="check" class="w-3.5 h-3.5"></i> คัดลอกโค้ดลงคลิปบอร์ดเรียบร้อยแล้ว! สามารถนำไป Paste ใน IDE หรือ Grader ได้ทันที
+            </div>
+        </div>
+
+        <!-- Educational Comparison Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4">
+                <h3 class="text-xs font-bold text-amber-300 mb-2 flex items-center gap-1.5">
+                    <i data-lucide="lightbulb" class="w-4 h-4 text-amber-400"></i> ทำไมเริ่มที่ i = p * p?
+                </h3>
+                <p class="text-xs text-slate-400 leading-relaxed">
+                    พหุคูณก่อนหน้าของ $p$ เช่น $2p, 3p, \dots, (p-1)p$ <strong>ถูกตัดทิ้งไปแล้ว</strong> โดยจำนวนเฉพาะที่เล็กกว่า $p$ 
+                    การเริ่มที่ $p^2$ จึงช่วยประหยัดการวนลูปซ้ำได้อย่างมหาศาล
+                </p>
+            </div>
+
+            <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4">
+                <h3 class="text-xs font-bold text-cyan-300 mb-2 flex items-center gap-1.5">
+                    <i data-lucide="database" class="w-4 h-4 text-cyan-400"></i> ทำไมใช้ vector&lt;bool&gt;?
+                </h3>
+                <p class="text-xs text-slate-400 leading-relaxed">
+                    ใน C++ มีการบีบอัดข้อมูลแบบพิเศษให้ 1 ช่องใช้หน่วยความจำเพียง <strong>1 bit</strong> (แทนที่จะเป็น 1 byte) 
+                    ทำให้ตะแกรงขนาด $10^7$ ใช้ RAM เพียงประมาณ 1.19 MB เท่านั้น
+                </p>
+            </div>
+
+            <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4">
+                <h3 class="text-xs font-bold text-rose-300 mb-2 flex items-center gap-1.5">
+                    <i data-lucide="alert-triangle" class="w-4 h-4 text-rose-400"></i> จุดระวัง Integer Overflow
+                </h3>
+                <p class="text-xs text-slate-400 leading-relaxed">
+                    เมื่อ $p > 46,340$ ค่า $p \times p$ จะเกินขอบเขตของ 32-bit Signed Integer ($2 \times 10^9$) 
+                    หาก $N$ มีค่ามาก ให้ใช้ชนิดข้อมูล <code>long long</code> ในลูปตัดพหุคูณเสมอ
+                </p>
+            </div>
+        </div>
+    </main>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // App State
+        let currentMode = 'optimized'; // 'optimized' or 'naive'
+        let valN = 100;
+        let steps = [];
+        let currentStepIndex = -1;
+        let isRunning = false;
+        let timer = null;
+        let soundEnabled = true;
+
+        // Tone.js Sound Synthesizer
+        let synth = null;
+        let polySynth = null;
+        function initAudio() {
+            if (!synth && typeof Tone !== 'undefined') {
+                try {
+                    synth = new Tone.Synth({
+                        oscillator: { type: "sine" },
+                        envelope: { attack: 0.005, decay: 0.05, sustain: 0.01, release: 0.05 }
+                    }).toDestination();
+                    synth.volume.value = -12;
+
+                    polySynth = new Tone.PolySynth(Tone.Synth, {
+                        oscillator: { type: "triangle" },
+                        envelope: { attack: 0.01, decay: 0.12, sustain: 0.05, release: 0.15 }
+                    }).toDestination();
+                    polySynth.volume.value = -10;
+                } catch (e) {
+                    console.warn("Audio warning:", e);
+                }
+            }
+        }
+
+        function playSound(type) {
+            if (!soundEnabled) return;
+            try {
+                if (typeof Tone !== 'undefined' && Tone.context && Tone.context.state !== 'running') {
+                    Tone.start();
+                }
+                initAudio();
+                const now = Tone.now();
+                if (type === 'prime_found') {
+                    if (polySynth) polySynth.triggerAttackRelease(["C4", "G4", "C5"], "0.15", now);
+                } else if (type === 'cross_out') {
+                    if (synth) synth.triggerAttackRelease("E3", "0.03", now);
+                } else if (type === 'complete') {
+                    if (polySynth) polySynth.triggerAttackRelease(["C4", "E4", "G4", "C5"], "0.35", now);
+                }
+            } catch (e) {}
+        }
+
+        // DOM Elements
+        const inputN = document.getElementById('input-n');
+        const badgeSqrtVal = document.getElementById('badge-sqrt-val');
+        const badgeComplexity = document.getElementById('badge-complexity');
+        const btnModeOptimized = document.getElementById('btn-mode-optimized');
+        const btnModeNaive = document.getElementById('btn-mode-naive');
+        const btnToggleSound = document.getElementById('btn-toggle-sound');
+        const soundIcon = document.getElementById('sound-icon');
+        const sliderSpeed = document.getElementById('slider-speed');
+        const speedLabel = document.getElementById('speed-label');
+        const btnPlay = document.getElementById('btn-play');
+        const btnStep = document.getElementById('btn-step');
+        const btnReset = document.getElementById('btn-reset');
+
+        const vizTitle = document.getElementById('viz-title');
+        const vizSubtitle = document.getElementById('viz-subtitle');
+        const statStep = document.getElementById('stat-step');
+        const sieveGrid = document.getElementById('sieve-grid');
+
+        const statCurP = document.getElementById('stat-cur-p');
+        const statCurI = document.getElementById('stat-cur-i');
+        const statOps = document.getElementById('stat-ops');
+        const statPrimeCount = document.getElementById('stat-prime-count');
+        const primeResultsList = document.getElementById('prime-results-list');
+        const badgePrimeRatio = document.getElementById('badge-prime-ratio');
+
+        const statusTitle = document.getElementById('status-title');
+        const statusDesc = document.getElementById('status-desc');
+        const statusBadge = document.getElementById('status-badge');
+
+        const codeFilename = document.getElementById('code-filename');
+        const codeBadge = document.getElementById('code-badge');
+        const codeBoxOptimized = document.getElementById('code-box-optimized');
+        const codeBoxNaive = document.getElementById('code-box-naive');
+
+        function generateOptimizedSteps(n) {
+            const list = [];
+            const isPrimeState = new Array(n + 1).fill(true);
+            isPrimeState[0] = false;
+            isPrimeState[1] = false;
+
+            // Step 0: Mark 0 and 1
+            list.push({
+                type: 'init',
+                line: 2,
+                desc: `กำหนดให้เลข 0 และ 1 ไม่ใช่จำนวนเฉพาะ (Mark is_prime[0] = is_prime[1] = false)`,
+                ops: 0,
+                curP: null,
+                curI: null
+            });
+
+            let ops = 0;
+            const limit = Math.floor(Math.sqrt(n));
+
+            for (let p = 2; p * p <= n; p++) {
+                if (isPrimeState[p]) {
+                    list.push({
+                        type: 'prime_selected',
+                        p: p,
+                        line: 4,
+                        ops: ops,
+                        desc: `พบจำนวนเฉพาะ p = ${p}! เตรียมตัดพหุคูณทั้งหมดของ ${p} โดยเริ่มที่ p² = ${p * p}`,
+                        curP: p,
+                        curI: null
+                    });
+
+                    for (let i = p * p; i <= n; i += p) {
+                        ops++;
+                        const wasPrime = isPrimeState[i];
+                        isPrimeState[i] = false;
+
+                        list.push({
+                            type: 'cross_multiple',
+                            p: p,
+                            i: i,
+                            line: 6,
+                            ops: ops,
+                            wasAlreadyCrossed: !wasPrime,
+                            desc: `ตัดพหุคูณ i = ${i} (${p} × ${i / p}) ออกจากตะแกรง`,
+                            curP: p,
+                            curI: i
+                        });
+                    }
+                } else {
+                    list.push({
+                        type: 'skip_composite',
+                        p: p,
+                        line: 3,
+                        ops: ops,
+                        desc: `เลข ${p} ถูกตัดไปก่อนหน้านี้แล้ว (ไม่ใช่จำนวนเฉพาะ) ข้ามไปยังตัวเลขถัดไป`,
+                        curP: p,
+                        curI: null
+                    });
+                }
+            }
+
+            // Final collection step
+            const primesFound = [];
+            for (let i = 2; i <= n; i++) {
+                if (isPrimeState[i]) primesFound.push(i);
+            }
+
+            list.push({
+                type: 'complete',
+                primes: primesFound,
+                line: 10,
+                ops: ops,
+                desc: `การทำตะแกรงเสร็จสิ้น! ตัวเลขที่ยังคงเหลืออยู่ในตะแกรงทั้งหมด (${primesFound.length} ตัว) คือจำนวนเฉพาะในช่วง [2, ${n}]`,
+                curP: null,
+                curI: null
+            });
+
+            return list;
+        }
+
+        function generateNaiveSteps(n) {
+            const list = [];
+            const isPrimeState = new Array(n + 1).fill(true);
+            isPrimeState[0] = false;
+            isPrimeState[1] = false;
+
+            list.push({
+                type: 'init',
+                line: 2,
+                desc: `กำหนดให้เลข 0 และ 1 ไม่ใช่จำนวนเฉพาะ`,
+                ops: 0,
+                curP: null,
+                curI: null
+            });
+
+            let ops = 0;
+            for (let p = 2; p <= n; p++) {
+                if (isPrimeState[p]) {
+                    list.push({
+                        type: 'prime_selected',
+                        p: p,
+                        line: 4,
+                        ops: ops,
+                        desc: `พบจำนวนเฉพาะ p = ${p}! เริ่มตัดพหุคูณตั้งแต่ 2p = ${2 * p} ถึง ${n}`,
+                        curP: p,
+                        curI: null
+                    });
+
+                    for (let i = 2 * p; i <= n; i += p) {
+                        ops++;
+                        const wasPrime = isPrimeState[i];
+                        isPrimeState[i] = false;
+
+                        list.push({
+                            type: 'cross_multiple',
+                            p: p,
+                            i: i,
+                            line: 6,
+                            ops: ops,
+                            wasAlreadyCrossed: !wasPrime,
+                            desc: `ตัดพหุคูณ i = ${i} (${p} × ${i / p}) ${!wasPrime ? '(ตรวจซ้ำ!)' : ''}`,
+                            curP: p,
+                            curI: i
+                        });
+                    }
+                }
+            }
+
+            const primesFound = [];
+            for (let i = 2; i <= n; i++) {
+                if (isPrimeState[i]) primesFound.push(i);
+            }
+
+            list.push({
+                type: 'complete',
+                primes: primesFound,
+                line: 10,
+                ops: ops,
+                desc: `การทำตะแกรงแบบ Standard เสร็จสิ้น! พบจำนวนเฉพาะทั้งหมด ${primesFound.length} ตัว (จำนวนรอบตัดซ้ำมากกว่าแบบ Optimized)`,
+                curP: null,
+                curI: null
+            });
+
+            return list;
+        }
+
+        function renderGrid(n) {
+            if (!sieveGrid) return;
+            sieveGrid.innerHTML = '';
+
+            for (let num = 1; num <= n; num++) {
+                const cell = document.createElement('div');
+                cell.id = `cell-num-${num}`;
+                cell.className = 'grid-num-cell p-2 rounded-lg border border-slate-800 bg-slate-900 text-slate-300 font-mono text-xs flex flex-col items-center justify-center relative select-none';
+
+                if (num === 1) {
+                    cell.className = 'grid-num-cell p-2 rounded-lg border border-slate-800/60 bg-slate-950/80 text-slate-600 line-through';
+                }
+
+                cell.innerHTML = `
+                    <span class="font-bold text-sm text-center leading-none">${num}</span>
+                    <span id="badge-elim-${num}" class="text-[9px] mt-0.5 text-slate-500 font-normal"></span>
+                `;
+                sieveGrid.appendChild(cell);
+            }
+        }
+
+        function highlightCode(mode, line) {
+            const prefix = (mode === 'optimized') ? 'opt' : 'naive';
+            for (let i = 1; i <= 10; i++) {
+                const el = document.getElementById(`${prefix}-line-${i}`);
+                if (el) {
+                    if (i === line) el.classList.add('code-highlight');
+                    else el.classList.remove('code-highlight');
+                }
+            }
+        }
+
+        function updateStatus(title, desc, type) {
+            if (statusTitle) statusTitle.textContent = title;
+            if (statusDesc) statusDesc.textContent = desc;
+
+            if (statusBadge) {
+                if (type === 'prime') {
+                    statusBadge.className = 'mt-0.5 p-1.5 rounded-lg bg-emerald-500/20 text-emerald-400 shrink-0';
+                    statusBadge.innerHTML = '<i data-lucide="shield-check" class="w-4 h-4"></i>';
+                } else if (type === 'cross') {
+                    statusBadge.className = 'mt-0.5 p-1.5 rounded-lg bg-rose-500/20 text-rose-400 shrink-0';
+                    statusBadge.innerHTML = '<i data-lucide="x" class="w-4 h-4"></i>';
+                } else {
+                    statusBadge.className = 'mt-0.5 p-1.5 rounded-lg bg-cyan-500/20 text-cyan-400 shrink-0';
+                    statusBadge.innerHTML = '<i data-lucide="info" class="w-4 h-4"></i>';
+                }
+            }
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function resetSimulation() {
+            stopAutoPlay();
+            valN = Math.min(200, Math.max(10, parseInt(inputN.value, 10) || 100));
+            inputN.value = valN;
+            const sqrtVal = Math.floor(Math.sqrt(valN));
+            if (badgeSqrtVal) badgeSqrtVal.textContent = `√N = ${sqrtVal}`;
+
+            if (currentMode === 'optimized') {
+                steps = generateOptimizedSteps(valN);
+                highlightCode('optimized', 1);
+                updateStatus('พร้อมจำลอง Optimized Sieve', `เริ่มตัดพหุคูณที่ p² และตรวจถึง ⌊√N⌋ = ${sqrtVal}`, 'info');
+            } else {
+                steps = generateNaiveSteps(valN);
+                highlightCode('naive', 1);
+                updateStatus('พร้อมจำลอง Standard Sieve', `เริ่มตัดพหุคูณที่ 2p และวนถึง N = ${valN}`, 'info');
+            }
+
+            currentStepIndex = -1;
+            if (statCurP) statCurP.textContent = '-';
+            if (statCurI) statCurI.textContent = '-';
+            if (statOps) statOps.textContent = '0';
+            if (statPrimeCount) statPrimeCount.textContent = '0';
+            if (statStep) statStep.textContent = `0 / ${steps.length}`;
+            if (primeResultsList) primeResultsList.innerHTML = '';
+            if (badgePrimeRatio) badgePrimeRatio.textContent = '0 ตัว';
+
+            renderGrid(valN);
+        }
+
+        function stepSimulation() {
+            if (currentStepIndex + 1 >= steps.length) {
+                stopAutoPlay();
+                return;
+            }
+
+            currentStepIndex++;
+            const step = steps[currentStepIndex];
+
+            if (statStep) statStep.textContent = `${currentStepIndex + 1} / ${steps.length}`;
+            if (statOps) statOps.textContent = step.ops;
+            if (statCurP) statCurP.textContent = step.curP !== null ? `p = ${step.curP}` : '-';
+            if (statCurI) statCurI.textContent = step.curI !== null ? `i = ${step.curI}` : '-';
+
+            highlightCode(currentMode, step.line);
+
+            if (step.type === 'init') {
+                const cell1 = document.getElementById('cell-num-1');
+                if (cell1) cell1.className = 'grid-num-cell p-2 rounded-lg border border-rose-900/50 bg-rose-950/40 text-slate-500 line-through scale-95';
+                updateStatus('กำหนดค่าเริ่มต้น', step.desc, 'info');
+            } else if (step.type === 'prime_selected') {
+                playSound('prime_found');
+                const cellP = document.getElementById(`cell-num-${step.p}`);
+                if (cellP) {
+                    cellP.className = 'grid-num-cell p-2 rounded-lg border-2 border-amber-400 bg-amber-500/30 text-amber-200 font-bold scale-105 shadow-lg shadow-amber-500/20 z-10';
+                    const elimLabel = document.getElementById(`badge-elim-${step.p}`);
+                    if (elimLabel) elimLabel.textContent = 'PRIME';
+                }
+                updateStatus(`เลือกจำนวนเฉพาะ p = ${step.p}`, step.desc, 'prime');
+            } else if (step.type === 'cross_multiple') {
+                playSound('cross_out');
+                const cellI = document.getElementById(`cell-num-${step.i}`);
+                if (cellI) {
+                    cellI.className = 'grid-num-cell p-2 rounded-lg border border-rose-800/80 bg-rose-950/60 text-rose-300/80 line-through scale-95 opacity-80';
+                    const elimLabel = document.getElementById(`badge-elim-${step.i}`);
+                    if (elimLabel) {
+                        elimLabel.textContent = `÷${step.p}`;
+                        elimLabel.className = 'text-[9px] mt-0.5 text-rose-400 font-semibold';
+                    }
+                }
+                updateStatus(`ตัดพหุคูณ i = ${step.i}`, step.desc, 'cross');
+            } else if (step.type === 'complete') {
+                playSound('complete');
+                updateStatus('🎉 การทำตะแกรงเสร็จสมบูรณ์!', step.desc, 'prime');
+
+                // Color all remaining primes emerald
+                step.primes.forEach(prime => {
+                    const cell = document.getElementById(`cell-num-${prime}`);
+                    if (cell) {
+                        cell.className = 'grid-num-cell p-2 rounded-lg border-2 border-emerald-400 bg-emerald-500/30 text-emerald-200 font-bold scale-105 shadow-md shadow-emerald-500/20';
+                        const badge = document.getElementById(`badge-elim-${prime}`);
+                        if (badge) {
+                            badge.textContent = 'PRIME';
+                            badge.className = 'text-[9px] mt-0.5 text-emerald-400 font-bold';
+                        }
+                    }
+                });
+
+                if (statPrimeCount) statPrimeCount.textContent = step.primes.length;
+                if (badgePrimeRatio) badgePrimeRatio.textContent = `${step.primes.length} ตัว`;
+
+                if (primeResultsList) {
+                    primeResultsList.innerHTML = step.primes.map(p =>
+                        `<span class="bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 rounded text-[11px] font-bold">${p}</span>`
+                    ).join('');
+                }
+                stopAutoPlay();
+            } else if (step.type === 'skip_composite') {
+                updateStatus(`ข้ามเลข ${step.p}`, step.desc, 'info');
+            }
+        }
+
+        function startAutoPlay() {
+            if (currentStepIndex + 1 >= steps.length) {
+                resetSimulation();
+            }
+            isRunning = true;
+            if (btnPlay) {
+                btnPlay.classList.remove('bg-emerald-600', 'hover:bg-emerald-500');
+                btnPlay.classList.add('bg-amber-600', 'hover:bg-amber-500');
+                btnPlay.innerHTML = '<i data-lucide="pause" class="w-4 h-4"></i> พักจำลอง';
+            }
+            if (window.lucide) lucide.createIcons();
+
+            const spd = sliderSpeed ? parseInt(sliderSpeed.value, 10) : 300;
+            timer = setInterval(() => {
+                stepSimulation();
+            }, spd);
+        }
+
+        function stopAutoPlay() {
+            isRunning = false;
+            if (timer) {
+                clearInterval(timer);
+                timer = null;
+            }
+            if (btnPlay) {
+                btnPlay.classList.remove('bg-amber-600', 'hover:bg-amber-500');
+                btnPlay.classList.add('bg-emerald-600', 'hover:bg-emerald-500');
+                btnPlay.innerHTML = '<i data-lucide="play" class="w-4 h-4"></i> เริ่มจำลองอัตโนมัติ';
+            }
+            if (window.lucide) lucide.createIcons();
+        }
+
+        // Mode Switching
+        btnModeOptimized.addEventListener('click', () => {
+            if (currentMode === 'optimized') return;
+            currentMode = 'optimized';
+            btnModeOptimized.className = 'px-2.5 py-1 font-semibold rounded-md bg-emerald-600 text-white shadow-md shadow-emerald-500/30 transition-all flex items-center gap-1.5';
+            btnModeNaive.className = 'px-2.5 py-1 font-semibold rounded-md text-slate-400 hover:text-white transition-all flex items-center gap-1.5';
+
+            codeBoxOptimized.classList.remove('hidden');
+            codeBoxNaive.classList.add('hidden');
+
+            codeFilename.textContent = 'sieve_optimized.cpp';
+            codeBadge.textContent = 'Optimized Sieve';
+            badgeComplexity.textContent = 'O(N log log N)';
+            vizTitle.innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span> ตารางตะแกรงตัวเลข 1 ถึง N (Optimized Sieve)';
+            vizSubtitle.textContent = 'เริ่มตัดพหุคูณที่ i = p * p และหยุดลูปนอกที่ p * p <= n';
+            resetSimulation();
+        });
+
+        btnModeNaive.addEventListener('click', () => {
+            if (currentMode === 'naive') return;
+            currentMode = 'naive';
+            btnModeNaive.className = 'px-2.5 py-1 font-semibold rounded-md bg-amber-600 text-white shadow-md shadow-amber-500/30 transition-all flex items-center gap-1.5';
+            btnModeOptimized.className = 'px-2.5 py-1 font-semibold rounded-md text-slate-400 hover:text-white transition-all flex items-center gap-1.5';
+
+            codeBoxNaive.classList.remove('hidden');
+            codeBoxOptimized.classList.add('hidden');
+
+            codeFilename.textContent = 'sieve_naive.cpp';
+            codeBadge.textContent = 'Standard Sieve';
+            badgeComplexity.textContent = 'O(N log N)';
+            vizTitle.innerHTML = '<span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span> ตารางตะแกรงตัวเลข 1 ถึง N (Standard Sieve)';
+            vizSubtitle.textContent = 'เริ่มตัดพหุคูณที่ i = 2 * p และวนลูปนอกถึง p <= n';
+            resetSimulation();
+        });
+
+        // Presets
+        document.querySelectorAll('.preset-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                inputN.value = btn.dataset.n;
+                resetSimulation();
+            });
+        });
+
+        // Speed Slider
+        sliderSpeed.addEventListener('input', () => {
+            speedLabel.textContent = `${sliderSpeed.value}ms`;
+            if (isRunning) {
+                stopAutoPlay();
+                startAutoPlay();
+            }
+        });
+
+        // Sound Toggle
+        btnToggleSound.addEventListener('click', () => {
+            soundEnabled = !soundEnabled;
+            soundIcon.setAttribute('data-lucide', soundEnabled ? 'volume-2' : 'volume-x');
+            if (window.lucide) lucide.createIcons();
+        });
+
+        // Playback Buttons
+        btnPlay.addEventListener('click', () => {
+            if (isRunning) stopAutoPlay();
+            else startAutoPlay();
+        });
+        btnStep.addEventListener('click', () => {
+            stopAutoPlay();
+            stepSimulation();
+        });
+        btnReset.addEventListener('click', resetSimulation);
+        inputN.addEventListener('input', resetSimulation);
+
+        const snippetTemplate = `#include <iostream>
+#include <vector>
+
+using namespace std;
+
+const int MAX = 10000000; // รองรับสูงสุด 10^7
+vector<bool> is_prime(MAX + 1, true);
+
+// ฟังก์ชัน Sieve of Eratosthenes แบบ Time Complexity: O(N log log N)
+void sieve(int n) {
+    is_prime[0] = is_prime[1] = false; // 0 และ 1 ไม่ใช่จำนวนเฉพาะ
+
+    for (int p = 2; p * p <= n; p++) {
+        // หาก p เป็นจำนวนเฉพาะ
+        if (is_prime[p]) {
+            // เริ่มตัดพหุคูณที่ p * p แทน 2 * p เพื่อหลีกเลี่ยงการตัดซ้ำ
+            for (int i = p * p; i <= n; i += p) {
+                is_prime[i] = false;
+            }
+        }
+    }
+}
+
+int main() {
+    // Fast I/O สำหรับโจทย์คอมพิวเตอร์โอลิมปิก
+    ios_base::sync_with_stdio(false);
+    cin.tie(NULL);
+
+    int n;
+    if (cin >> n) {
+        sieve(n);
+
+        cout << "จำนวนเฉพาะในช่วง 1 ถึง " << n << " ได้แก่:\\n";
+        for (int i = 2; i <= n; i++) {
+            if (is_prime[i]) {
+                cout << i << " ";
+            }
+        }
+        cout << "\\n";
+    }
+    return 0;
+}`;
+
+        const displayCodeBlock = document.getElementById('display-code-block');
+        const btnCopyCode = document.getElementById('btn-copy-code');
+        const copyBtnText = document.getElementById('copy-btn-text');
+        const copyToast = document.getElementById('copy-toast');
+
+        if (displayCodeBlock) displayCodeBlock.textContent = snippetTemplate;
+
+        btnCopyCode.addEventListener('click', () => {
+            const temp = document.createElement('textarea');
+            temp.value = snippetTemplate;
+            temp.style.position = 'fixed';
+            temp.style.left = '-9999px';
+            document.body.appendChild(temp);
+            temp.focus();
+            temp.select();
+            try {
+                document.execCommand('copy');
+                copyBtnText.textContent = 'คัดลอกสำเร็จ!';
+                copyToast.classList.remove('hidden');
+                setTimeout(() => {
+                    copyToast.classList.add('hidden');
+                    copyBtnText.textContent = 'คัดลอกโค้ด C++';
+                }, 2500);
+            } catch (err) {
+                console.error(err);
+            }
+            document.body.removeChild(temp);
+        });
+
+        // Initialize Icons & Simulator State
+        if (window.lucide) lucide.createIcons();
+        resetSimulation();
+    });
+    </script>
+</body>
+</html>

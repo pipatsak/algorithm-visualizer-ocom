@@ -1,0 +1,1311 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Testing & Debugging Simulator - ค่าย 1 สอวน. คอมพิวเตอร์</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts Prompt & Fira Code -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Prompt', sans-serif; }
+        code, pre, .font-mono { font-family: 'Fira Code', monospace; }
+        .code-highlight-bug {
+            background-color: rgba(244, 63, 94, 0.28) !important;
+            border-left: 4px solid #f43f5e !important;
+            color: #ffffff !important;
+            font-weight: 600;
+            padding-left: 8px;
+            transition: all 0.15s ease-in-out;
+        }
+        .code-highlight-fixed {
+            background-color: rgba(16, 185, 129, 0.28) !important;
+            border-left: 4px solid #10b981 !important;
+            color: #ffffff !important;
+            font-weight: 600;
+            padding-left: 8px;
+            transition: all 0.15s ease-in-out;
+        }
+        /* Custom scrollbars */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col antialiased selection:bg-rose-500 selection:text-white">
+
+    <header class="border-b border-slate-800 bg-slate-900/90 backdrop-blur sticky top-0 z-40 px-4 py-3">
+        <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-rose-600 via-amber-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-rose-500/20">
+                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="m8 2 1.88 1.88M14.12 3.88 16 2M9 7.13v-1a3.003 3.003 0 1 1 6 0v1M12 20c-3.3 0-6-2.7-6-6v-3a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v3c0 3.3-2.7 6-6 6ZM12 20v-9M6.53 9C4.6 8.8 3 7.1 3 5M6 13H2M3 21c0-2.1 1.7-3.9 3.8-4M20.9 5c0 2.1-1.6 3.8-3.5 4M22 13h-4M17.2 17c2.1.1 3.8 1.9 3.8 4"/>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-base md:text-lg font-bold text-white flex items-center gap-2">
+                        เครื่องมือจำลองการทดสอบระบบและดีบั๊ก (Testing & Debugging Studio)
+                        <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30">สอวน. ค่าย 1</span>
+                    </h1>
+                    <p class="text-xs text-slate-400">Stress Testing, Grader Verdicts Simulation & Contest Bug Hunting</p>
+                </div>
+            </div>
+
+            <!-- Global Action Controls -->
+            <div class="flex items-center gap-2 bg-slate-800/90 p-1.5 rounded-xl border border-slate-700">
+                <div class="flex items-center gap-1 bg-slate-950 p-1 rounded-lg border border-slate-700/60 text-xs">
+                    <button id="tab-btn-stress" class="tab-main-btn px-3 py-1.5 font-semibold rounded-md bg-rose-600 text-white shadow-md transition-all flex items-center gap-1.5 cursor-pointer" data-tab="stress">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect width="16" height="16" x="4" y="4" rx="2"/><rect width="6" height="6" x="9" y="9" rx="1"/><path d="M15 2v2M15 20v2M2 15h2M2 9h2M20 15h2M20 9h2M9 2v2M9 20v2"/></svg>
+                        1. Stress Testing
+                    </button>
+                    <button id="tab-btn-grader" class="tab-main-btn px-3 py-1.5 font-semibold rounded-md text-slate-400 hover:text-white transition-all flex items-center gap-1.5 cursor-pointer" data-tab="grader">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg>
+                        2. Grader Simulator
+                    </button>
+                    <button id="tab-btn-hunting" class="tab-main-btn px-3 py-1.5 font-semibold rounded-md text-slate-400 hover:text-white transition-all flex items-center gap-1.5 cursor-pointer" data-tab="hunting">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="M12 8v4M12 16h.01"/></svg>
+                        3. Bug Hunting
+                    </button>
+                </div>
+                <button id="btn-toggle-sound" title="เปิด/ปิดเสียงเอฟเฟกต์" class="p-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-700/60 transition-all cursor-pointer">
+                    <svg id="sound-icon-on" class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
+                    <svg id="sound-icon-off" class="w-4 h-4 text-slate-500 hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 space-y-6">
+
+        <!-- ======================================================== -->
+        <!-- SECTION 1: STRESS TESTING SANDBOX -->
+        <!-- ======================================================== -->
+        <div id="section-stress" class="space-y-6">
+            <!-- Stress Test Overview & Control Panel -->
+            <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 md:p-5 shadow-xl backdrop-blur-sm">
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
+                    <div class="md:col-span-5">
+                        <label class="block text-xs font-medium text-slate-300 mb-1 flex items-center gap-1.5">
+                            <span class="w-2 h-2 rounded-full bg-rose-400"></span> เลือกโจทย์และสถานการณ์จำลอง (Bug Scenario):
+                        </label>
+                        <select id="select-stress-problem" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 font-mono">
+                            <option value="overflow">Max Pair Product: ลืมใช้ long long (Integer Overflow)</option>
+                            <option value="offbyone">Array Max Frequency: เข้าถึงดัชนีเกินขอบเขต (Off-by-one)</option>
+                            <option value="prime_edge">Primality Check: ลืมดักเคสเลข 1 และเลขคู่ (Corner Case)</option>
+                            <option value="correct">Optimal vs Brute Force: อัลกอริทึมถูกต้องสมบูรณ์ (All Pass)</option>
+                        </select>
+                    </div>
+
+                    <div class="md:col-span-3">
+                        <label class="block text-xs font-medium text-slate-300 mb-1 flex items-center gap-1.5">
+                            <span class="w-2 h-2 rounded-full bg-amber-400"></span> จำนวนเคสทดสอบสูงสุด (Max Trials):
+                        </label>
+                        <div class="relative">
+                            <input type="number" id="input-stress-trials" value="50" min="5" max="200" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 font-mono">
+                            <span class="absolute right-3 top-2 text-xs font-mono text-slate-500">เคส</span>
+                        </div>
+                    </div>
+
+                    <div class="md:col-span-4 flex items-center justify-end gap-2">
+                        <button id="btn-run-stress" class="bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold py-2 px-4 rounded-xl flex items-center gap-1.5 shadow-lg shadow-rose-600/30 transition-all cursor-pointer">
+                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                            <span id="label-stress-run">เริ่ม Stress Testing</span>
+                        </button>
+                        <button id="btn-step-stress" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white text-xs font-semibold py-2 px-3 rounded-xl flex items-center gap-1.5 transition-all cursor-pointer">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
+                            ทีละ 1 เคส
+                        </button>
+                        <button id="btn-reset-stress" class="bg-slate-800 hover:bg-rose-500/20 hover:text-rose-300 border border-slate-700 text-slate-300 text-xs font-semibold py-2 px-3 rounded-xl flex items-center gap-1.5 transition-all cursor-pointer">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                            รีเซ็ต
+                        </button>
+                    </div>
+                </div>
+
+                <div class="mt-4 pt-3 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3">
+                    <div class="w-full sm:w-2/3 flex items-center gap-3">
+                        <span class="text-xs text-slate-400 whitespace-nowrap">ความคืบหน้า:</span>
+                        <div class="w-full bg-slate-950 rounded-full h-2.5 overflow-hidden border border-slate-800">
+                            <div id="stress-progress-bar" class="bg-gradient-to-r from-indigo-500 via-amber-500 to-rose-500 h-full w-0 transition-all duration-150"></div>
+                        </div>
+                        <span id="stress-progress-text" class="text-xs font-mono text-slate-300 whitespace-nowrap">0 / 50</span>
+                    </div>
+
+                    <div id="stress-badge-status" class="px-2.5 py-1 rounded-full text-xs font-mono bg-slate-800 text-slate-300 border border-slate-700 flex items-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full bg-slate-400"></span> พร้อมทดสอบ
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
+                <!-- Pane 1: Generator Code & Live Input (4 cols) -->
+                <div class="lg:col-span-4 bg-slate-900/90 border border-slate-800 rounded-2xl p-4 shadow-xl flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between border-b border-slate-800 pb-2 mb-2">
+                            <span class="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M2 18h1.4c1.3 0 2.5-.6 3.3-1.7l6.1-8.6c.7-1.1 2-1.7 3.3-1.7H22"/><path d="m18 2 4 4-4 4M2 6h1.9c1.5 0 2.9.9 3.6 2.2"/><path d="M22 18h-5.9c-1.3 0-2.6-.7-3.3-1.8l-.5-.8"/><path d="m18 14 4 4-4 4"/></svg>
+                                generator.cpp (ตัวสุ่มเคส)
+                            </span>
+                            <span class="text-[10px] font-mono text-slate-500">mt19937_64</span>
+                        </div>
+                        <div class="bg-slate-950 rounded-xl border border-slate-800/90 p-3 font-mono text-xs overflow-x-auto text-slate-300 max-h-[140px]">
+                            <pre id="code-stress-gen" class="text-[11px] leading-tight text-slate-400"><code>// ตัวสร้างข้อมูลทดสอบสุ่ม</code></pre>
+                        </div>
+
+                        <!-- Current Input Box -->
+                        <div class="mt-3">
+                            <span class="text-xs font-semibold text-slate-300 block mb-1 flex items-center gap-1">
+                                <svg class="w-3 h-3 text-amber-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/></svg>
+                                ข้อมูลนำเข้าปัจจุบัน (input.txt):
+                            </span>
+                            <div id="box-current-input" class="bg-slate-950 rounded-xl border border-amber-500/30 p-2.5 font-mono text-xs text-amber-200 min-h-[70px] max-h-[100px] overflow-y-auto">
+                                รอเริ่มการทดสอบ...
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pt-3 border-t border-slate-800 text-[11px] text-slate-400">
+                        สุ่มทดสอบครอบคลุมค่าต่ำสุด, ค่าสูงสุด และกรณีขอบเขต
+                    </div>
+                </div>
+
+                <!-- Pane 2: Solution Code vs Brute Force (5 cols) -->
+                <div class="lg:col-span-5 bg-slate-900/90 border border-slate-800 rounded-2xl p-4 shadow-xl flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between border-b border-slate-800 pb-2 mb-2">
+                            <span class="text-xs font-bold uppercase tracking-wider text-rose-400 flex items-center gap-1.5">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+                                solution.cpp (เป้าหมายที่สงสัยว่ามีบั๊ก)
+                            </span>
+                            <span id="badge-solution-algo" class="text-[10px] font-mono px-2 py-0.5 rounded bg-rose-500/10 text-rose-300 border border-rose-500/20">O(N log N)</span>
+                        </div>
+                        <div class="bg-slate-950 rounded-xl border border-slate-800/90 p-3 font-mono text-xs overflow-x-auto text-slate-300 max-h-[160px]">
+                            <pre id="code-stress-sol" class="text-[11px] leading-tight text-slate-300"><code>// โค้ดที่ต้องการทดสอบ</code></pre>
+                        </div>
+
+                        <!-- Output Comparison Diff Box -->
+                        <div class="mt-3 grid grid-cols-2 gap-2">
+                            <div>
+                                <span class="text-[11px] font-semibold text-rose-400 block mb-1">ผลลัพธ์ Solution (my_out.txt)</span>
+                                <div id="box-out-sol" class="bg-slate-950 rounded-xl border border-rose-500/30 p-2 font-mono text-xs text-rose-200 min-h-[50px] flex items-center justify-center">
+                                    -
+                                </div>
+                            </div>
+                            <div>
+                                <span class="text-[11px] font-semibold text-emerald-400 block mb-1">ผลลัพธ์ Brute Force (correct_out.txt)</span>
+                                <div id="box-out-brute" class="bg-slate-950 rounded-xl border border-emerald-500/30 p-2 font-mono text-xs text-emerald-200 min-h-[50px] flex items-center justify-center">
+                                    -
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Verdict Banner -->
+                    <div id="banner-stress-result" class="mt-3 p-2.5 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between text-xs font-mono">
+                        <span class="text-slate-400">สถานะเคสล่าสุด:</span>
+                        <span id="label-stress-diff" class="font-bold text-slate-300">ยังไม่มีการทดสอบ</span>
+                    </div>
+                </div>
+
+                <!-- Pane 3: Test Run Log & History (3 cols) -->
+                <div class="lg:col-span-3 bg-slate-900/90 border border-slate-800 rounded-2xl p-4 shadow-xl flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between border-b border-slate-800 pb-2 mb-2">
+                            <span class="text-xs font-bold uppercase tracking-wider text-cyan-400 flex items-center gap-1.5">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m9 11 3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                                ประวัติการรัน (Run Log)
+                            </span>
+                            <span id="badge-pass-count" class="text-[10px] font-mono text-slate-400">0 Passed</span>
+                        </div>
+                        <div id="log-stress-container" class="space-y-1.5 max-h-[220px] overflow-y-auto pr-1">
+                            <div class="text-[11px] text-slate-500 text-center py-6 font-mono">
+                                กด "เริ่ม Stress Testing" เพื่อดูการเปรียบเทียบคำตอบ
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pt-2 border-t border-slate-800 flex items-center justify-between text-[11px] font-mono text-slate-400">
+                        <span>Total: <strong id="stat-total-trials" class="text-white">0</strong></span>
+                        <span class="text-rose-400">Failed: <strong id="stat-failed-trials" class="text-rose-400">0</strong></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ======================================================== -->
+        <!-- SECTION 2: GRADER VERDICT SIMULATOR -->
+        <!-- ======================================================== -->
+        <div id="section-grader" class="hidden space-y-6">
+            <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl backdrop-blur-sm">
+                <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+                    <div class="flex items-center gap-2">
+                        <div class="p-2 rounded-xl bg-indigo-500/20 text-indigo-400">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect width="20" height="8" x="2" y="2" rx="2" ry="2"/><rect width="20" height="8" x="2" y="14" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
+                        </div>
+                        <div>
+                            <h2 class="text-sm font-bold uppercase tracking-wider text-slate-200">
+                                ระบบตรวจข้อสอบอัตโนมัติจำลอง (Grader Verdict Simulator)
+                            </h2>
+                            <p class="text-xs text-slate-400">จำลองการให้คะแนนแบบ Subtasks (100 คะแนนเต็ม) พร้อมถอดรหัส Verdicts: AC, WA, TLE, RTE, MLE</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <button id="btn-submit-grader" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold py-2 px-4 rounded-xl flex items-center gap-1.5 shadow-lg shadow-indigo-600/30 transition-all cursor-pointer">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                            ส่งโค้ดขึ้น Grader (Submit)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Problem Preset Selector for Grader -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-5">
+                    <button class="preset-grader-btn active bg-slate-950 border-2 border-indigo-500 p-3 rounded-xl text-left transition-all cursor-pointer" data-code="perfect">
+                        <div class="text-xs font-bold text-white flex items-center justify-between">
+                            <span>1. Correct Algorithm</span>
+                            <span class="text-[10px] font-mono text-emerald-400 bg-emerald-950/60 px-1.5 py-0.5 rounded">100/100</span>
+                        </div>
+                        <p class="text-[11px] text-slate-400 mt-1">ใช้อัลกอริทึม O(N log N) และ Fast I/O ถูกต้องทุก Subtask</p>
+                    </button>
+
+                    <button class="preset-grader-btn bg-slate-950 border border-slate-800 hover:border-slate-700 p-3 rounded-xl text-left transition-all cursor-pointer" data-code="tle">
+                        <div class="text-xs font-bold text-white flex items-center justify-between">
+                            <span>2. Slow Algorithm (TLE)</span>
+                            <span class="text-[10px] font-mono text-amber-400 bg-amber-950/60 px-1.5 py-0.5 rounded">20/100</span>
+                        </div>
+                        <p class="text-[11px] text-slate-400 mt-1">ใช้ O(N²) ผ่านเฉพาะ Subtask 1 แต่ติด Time Limit ใน Subtask 2-3</p>
+                    </button>
+
+                    <button class="preset-grader-btn bg-slate-950 border border-slate-800 hover:border-slate-700 p-3 rounded-xl text-left transition-all cursor-pointer" data-code="overflow">
+                        <div class="text-xs font-bold text-white flex items-center justify-between">
+                            <span>3. Integer Overflow (WA)</span>
+                            <span class="text-[10px] font-mono text-rose-400 bg-rose-950/60 px-1.5 py-0.5 rounded">50/100</span>
+                        </div>
+                        <p class="text-[11px] text-slate-400 mt-1">ใช้ int 32-bit คำนวณคูณ ทำให้ได้ผลลบใน Subtask ที่มีเลขขนาด 10⁹</p>
+                    </button>
+
+                    <button class="preset-grader-btn bg-slate-950 border border-slate-800 hover:border-slate-700 p-3 rounded-xl text-left transition-all cursor-pointer" data-code="segfault">
+                        <div class="text-xs font-bold text-white flex items-center justify-between">
+                            <span>4. Out of Bounds (RTE)</span>
+                            <span class="text-[10px] font-mono text-purple-400 bg-purple-950/60 px-1.5 py-0.5 rounded">0/100</span>
+                        </div>
+                        <p class="text-[11px] text-slate-400 mt-1">ประกาศ Array ขนาด 1,000 แต่โจทย์ส่ง N = 100,000 (SIGSEGV Crash)</p>
+                    </button>
+                </div>
+
+                <!-- Grader Scoreboard & Subtask Table -->
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
+                    <div class="lg:col-span-8 bg-slate-950 rounded-xl border border-slate-800 p-4">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+                                <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                                ตารางผลการทดสอบแต่ละเคส (Testcases Matrix)
+                            </span>
+                            <div class="flex items-center gap-2 text-xs font-mono">
+                                <span>คะแนนรวม: <strong id="grader-total-score" class="text-emerald-400 text-sm">-- / 100</strong></span>
+                            </div>
+                        </div>
+
+                        <!-- Subtask Rows -->
+                        <div id="grader-subtasks-container" class="space-y-2.5">
+                            <!-- Populated dynamically via JS -->
+                        </div>
+                    </div>
+
+                    <!-- Diagnostic Verdict Explainer -->
+                    <div class="lg:col-span-4 bg-slate-950 rounded-xl border border-slate-800 p-4 flex flex-col justify-between">
+                        <div>
+                            <span class="text-xs font-bold uppercase tracking-wider text-slate-300 block mb-2 flex items-center gap-1.5">
+                                <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+                                บันทึกการวิเคราะห์ข้อผิดพลาด (Diagnostics)
+                            </span>
+                            <div id="grader-diagnostic-box" class="bg-slate-900 border border-slate-800 rounded-xl p-3 font-mono text-xs text-slate-300 min-h-[140px] leading-relaxed">
+                                กดปุ่ม "ส่งโค้ดขึ้น Grader (Submit)" เพื่อทำการประเมินผลคะแนน
+                            </div>
+                        </div>
+
+                        <div class="mt-4 pt-3 border-t border-slate-800 text-[11px] text-slate-400 space-y-1">
+                            <div class="flex items-center justify-between">
+                                <span class="flex items-center gap-1 text-emerald-400"><strong class="font-mono">P (AC)</strong>: Accepted</span>
+                                <span class="flex items-center gap-1 text-rose-400"><strong class="font-mono">- (WA)</strong>: Wrong Answer</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="flex items-center gap-1 text-amber-400"><strong class="font-mono">T (TLE)</strong>: Time Limit</span>
+                                <span class="flex items-center gap-1 text-purple-400"><strong class="font-mono">X (RTE)</strong>: Runtime Crash</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ======================================================== -->
+        <!-- SECTION 3: BUG HUNTING / CODE REVIEW GAME -->
+        <!-- ======================================================== -->
+        <div id="section-hunting" class="hidden space-y-6">
+            <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl backdrop-blur-sm">
+                <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+                    <div class="flex items-center gap-2">
+                        <div class="p-2 rounded-xl bg-amber-500/20 text-amber-400">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                        </div>
+                        <div>
+                            <h2 class="text-sm font-bold uppercase tracking-wider text-slate-200">
+                                มินิเกมค้นหาบั๊ก & Code Review (Contest Pitfall Hunter)
+                            </h2>
+                            <p class="text-xs text-slate-400">ฝึกสายตาการเป็นนักแข่งโอลิมปิก: คลิกเลือกบรรทัดที่มีข้อผิดพลาดแฝงอยู่ และกดซ่อมแซมเพื่อรับ 100 คะแนนเต็ม</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <select id="select-hunt-case" class="bg-slate-950 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-amber-500 font-mono">
+                            <option value="overflow_trap">หลุมพรางที่ 1: Integer Overflow ในผลคูณคู่</option>
+                            <option value="off_by_one">หลุมพรางที่ 2: ดัชนีเกินขอบเขต (i <= N)</option>
+                            <option value="testcase_reset">หลุมพรางที่ 3: ลืมเคลียร์ค่าในลูป T Testcases</option>
+                            <option value="zero_div">หลุมพรางที่ 4: การหารด้วยศูนย์เมื่อ k == 0</option>
+                            <option value="endl_tle">หลุมพรางที่ 5: ติด TLE เพราะใช้ std::endl พร่ำเพรื่อ</option>
+                        </select>
+                        <button id="btn-fix-hunt-bug" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold py-1.5 px-3.5 rounded-xl flex items-center gap-1.5 shadow-lg shadow-emerald-600/30 transition-all cursor-pointer">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+                            แก้ไขบั๊กนี้ (Apply Fix)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Code Inspection Canvas -->
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
+                    <div class="lg:col-span-7 bg-slate-950 rounded-xl border border-slate-800 p-4">
+                        <div class="flex items-center justify-between border-b border-slate-800 pb-2 mb-2">
+                            <span class="text-xs font-mono text-slate-400 font-semibold flex items-center gap-2">
+                                <span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
+                                <span id="hunt-file-name">contest_solution.cpp</span>
+                            </span>
+                            <span id="hunt-click-guide" class="text-[11px] font-mono text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
+                                คลิกที่บรรทัดที่มีบั๊กเพื่อตรวจสอบ
+                            </span>
+                        </div>
+
+                        <!-- Interactive Code Lines Box -->
+                        <div id="hunt-code-box" class="font-mono text-xs leading-relaxed space-y-1 overflow-x-auto py-1">
+                            <!-- Populated with clickable lines dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- Bug Explanation & Educational Insight Card -->
+                    <div class="lg:col-span-5 bg-slate-950 rounded-xl border border-slate-800 p-4 flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center justify-between mb-3">
+                                <span class="text-xs font-bold uppercase tracking-wider text-rose-400 flex items-center gap-1.5">
+                                    <svg class="w-4 h-4 text-rose-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                                    คำอธิบายพฤติกรรมของบั๊ก (Bug Diagnosis)
+                                </span>
+                                <span id="hunt-status-badge" class="text-[10px] font-mono px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 border border-rose-500/40">
+                                    พบบั๊ก!
+                                </span>
+                            </div>
+
+                            <div id="hunt-explanation-content" class="text-xs text-slate-300 space-y-3 leading-relaxed">
+                                <!-- Populated dynamically -->
+                            </div>
+                        </div>
+
+                        <div class="mt-4 pt-3 border-t border-slate-800 bg-slate-900/60 p-3 rounded-xl border border-slate-800">
+                            <span class="text-[11px] font-semibold text-emerald-400 block mb-1 flex items-center gap-1">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                                คำแนะนำและวิธีป้องกัน (Best Practice):
+                            </span>
+                            <p id="hunt-best-practice" class="text-xs text-slate-400 leading-normal">
+                                <!-- Populated dynamically -->
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ======================================================== -->
+        <!-- SECTION 4: LOCAL BASH SCRIPT TOOLKIT & EDUCATIONAL CARDS -->
+        <!-- ======================================================== -->
+        <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl">
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+                <div class="flex items-center gap-2">
+                    <div class="p-1.5 rounded-lg bg-rose-500/20 text-rose-400">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+                    </div>
+                    <div>
+                        <h2 class="text-sm font-bold uppercase tracking-wider text-slate-200">
+                            เครื่องมือชุดคำสั่ง Bash สำหรับ Stress Testing บนเครื่องตนเอง
+                        </h2>
+                        <p class="text-xs text-slate-400">สคริปต์อัตโนมัติสำหรับคอมไพล์และวนลูปจับคู่คำตอบจนกว่าจะเจอเคสที่พัง (พร้อมนำไปใช้ในห้องสอบ)</p>
+                    </div>
+                </div>
+
+                <button id="btn-copy-script" class="bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold py-1.5 px-3.5 rounded-xl flex items-center gap-1.5 shadow-lg shadow-rose-600/20 transition-all cursor-pointer">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                    <span id="copy-script-text">คัดลอกสคริปต์ Bash</span>
+                </button>
+            </div>
+
+            <div class="relative bg-slate-950 border border-slate-800 rounded-xl p-4 font-mono text-xs overflow-x-auto text-slate-300">
+                <pre id="display-bash-script" class="whitespace-pre"><code>// กำลังโหลดสคริปต์...</code></pre>
+            </div>
+            <div id="copy-script-toast" class="hidden mt-2.5 text-xs text-rose-400 bg-rose-500/10 border border-rose-500/20 px-3 py-1.5 rounded-lg flex items-center gap-1.5">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                คัดลอกสคริปต์ลงคลิปบอร์ดเรียบร้อยแล้ว! สามารถบันทึกเป็นไฟล์ <code>stress.sh</code> แล้วรัน <code>bash stress.sh</code> ได้ทันที
+            </div>
+        </div>
+
+        <!-- Educational Cards: Testing Pillars -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4">
+                <h3 class="text-xs font-bold text-rose-300 mb-2 flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-rose-400"></span> ทำไมต้องทำ Stress Testing?
+                </h3>
+                <p class="text-xs text-slate-400 leading-relaxed">
+                    เพราะชุดเคสตัวอย่างในโจทย์ (Sample) มักเรียบร้อยเกินไป การสุ่มเคสขนาดเล็กจำนวนนับพันครั้งจะช่วยเปิดเผย **Corner Cases** ที่ผู้เข้าสอบคิดไม่ถึง เช่น ค่าติดลบ, สมาชิกซ้ำ หรือเลขคี่ตัวสุดท้าย
+                </p>
+            </div>
+
+            <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4">
+                <h3 class="text-xs font-bold text-amber-300 mb-2 flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-amber-400"></span> พลังของ Sanitizer Flags
+                </h3>
+                <p class="text-xs text-slate-400 leading-relaxed">
+                    การเพิ่ม <code>-fsanitize=address,undefined</code> ตอนคอมไพล์บนเครื่อง จะช่วยแจ้งเตือนทันทีที่โปรแกรมเข้าถึง Array นอกขอบเขต หรือเกิด Signed Overflow โดยไม่ต้องรอให้ Grader แจ้งเตือน RTE
+                </p>
+            </div>
+
+            <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4">
+                <h3 class="text-xs font-bold text-indigo-300 mb-2 flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-indigo-400"></span> กลยุทธ์การเก็บคะแนน Subtasks
+                </h3>
+                <p class="text-xs text-slate-400 leading-relaxed">
+                    หากคิดวิธี $O(N \log N)$ ไม่ออก ให้เขียนวิธี Brute Force $O(N^2)$ ส่งก่อนเพื่อคว้าคะแนน Subtask แรก (เช่น 20-50 คะแนน) ติดตัวไว้เสมอ ดีกว่าส่งโค้ดที่ติด TLE ทั้งหมดและได้ 0 คะแนน
+                </p>
+            </div>
+        </div>
+    </main>
+
+    <script>
+    (function () {
+        // App State
+        let soundEnabled = true;
+        let stressRunning = false;
+        let stressTimer = null;
+        let currentStressTrial = 0;
+        let maxStressTrials = 50;
+        let passedStressCount = 0;
+
+        // Native Web Audio Synthesizer (Zero External Dependencies)
+        let audioCtx = null;
+        function getAudioContext() {
+            if (!audioCtx && (window.AudioContext || window.webkitAudioContext)) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            return audioCtx;
+        }
+
+        function playSound(type) {
+            if (!soundEnabled) return;
+            try {
+                const ctx = getAudioContext();
+                if (!ctx) return;
+                const now = ctx.currentTime;
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+
+                if (type === 'pass') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(523.25, now); // C5
+                    gain.gain.setValueAtTime(0.08, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+                    osc.start(now);
+                    osc.stop(now + 0.08);
+                } else if (type === 'fail') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(160, now);
+                    gain.gain.setValueAtTime(0.12, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+                    osc.start(now);
+                    osc.stop(now + 0.25);
+                } else if (type === 'ac') {
+                    // Quick arpeggio
+                    [523.25, 659.25, 783.99, 1046.5].forEach((freq, idx) => {
+                        const o = ctx.createOscillator();
+                        const g = ctx.createGain();
+                        o.connect(g);
+                        g.connect(ctx.destination);
+                        o.type = 'triangle';
+                        o.frequency.setValueAtTime(freq, now + idx * 0.08);
+                        g.gain.setValueAtTime(0.07, now + idx * 0.08);
+                        g.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.08 + 0.12);
+                        o.start(now + idx * 0.08);
+                        o.stop(now + idx * 0.08 + 0.12);
+                    });
+                } else if (type === 'click') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(800, now);
+                    gain.gain.setValueAtTime(0.04, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.03);
+                    osc.start(now);
+                    osc.stop(now + 0.03);
+                }
+            } catch (e) {
+                // Audio fallback silence
+            }
+        }
+
+        const tabBtns = document.querySelectorAll('.tab-main-btn');
+        const sections = {
+            stress: document.getElementById('section-stress'),
+            grader: document.getElementById('section-grader'),
+            hunting: document.getElementById('section-hunting')
+        };
+
+        tabBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const target = btn.dataset.tab;
+                tabBtns.forEach(b => {
+                    b.classList.remove('bg-rose-600', 'bg-indigo-600', 'bg-amber-600', 'text-white', 'shadow-md');
+                    b.classList.add('text-slate-400');
+                });
+                btn.classList.remove('text-slate-400');
+                if (target === 'stress') btn.classList.add('bg-rose-600', 'text-white', 'shadow-md');
+                else if (target === 'grader') btn.classList.add('bg-indigo-600', 'text-white', 'shadow-md');
+                else if (target === 'hunting') btn.classList.add('bg-amber-600', 'text-white', 'shadow-md');
+
+                Object.keys(sections).forEach(k => {
+                    if (sections[k]) {
+                        if (k === target) sections[k].classList.remove('hidden');
+                        else sections[k].classList.add('hidden');
+                    }
+                });
+                playSound('click');
+            });
+        });
+
+        const stressProblems = {
+            overflow: {
+                title: "Max Pair Product (Integer Overflow)",
+                algo: "O(N log N) with 32-bit int bug",
+                generatorCode: `// สุ่มอาร์เรย์ขนาด N ค่าในช่วง [1, 10^9]
+int n = randRange(2, 5);
+cout << n << "\\n";
+for (int i = 0; i < n; i++)
+    cout << randRange(1, 1000000000) << " ";`,
+                solutionCode: `int maxPairProduct(vector<int> a) {
+    sort(a.begin(), a.end());
+    int n = a.size();
+    // บั๊ก: ผลคูณเกิน 2*10^9 ล้นขอบเขต int!
+    int ans = a[n-1] * a[n-2];
+    return ans;
+}`,
+                runCase: (trial) => {
+                    const isLarge = (trial >= 3);
+                    const n = Math.floor(Math.random() * 3) + 2;
+                    const arr = [];
+                    for (let i = 0; i < n; i++) {
+                        if (isLarge) arr.push(Math.floor(Math.random() * 800000000) + 100000000);
+                        else arr.push(Math.floor(Math.random() * 50) + 1);
+                    }
+
+                    // Brute Oracle (Correct 64-bit BigInt)
+                    const sorted = [...arr].sort((x, y) => x - y);
+                    const b1 = BigInt(sorted[sorted.length - 1]);
+                    const b2 = BigInt(sorted[sorted.length - 2]);
+                    const correctVal = (b1 * b2).toString();
+
+                    // Buggy Solution (Simulated 32-bit signed wrap)
+                    const n1 = sorted[sorted.length - 1];
+                    const n2 = sorted[sorted.length - 2];
+                    const realProd = n1 * n2;
+                    let solVal;
+                    if (realProd > 2147483647) {
+                        const wrapped = (realProd % 4294967296);
+                        solVal = (wrapped > 2147483647 ? wrapped - 4294967296 : wrapped).toString();
+                    } else {
+                        solVal = realProd.toString();
+                    }
+
+                    const isMatch = (solVal === correctVal);
+                    return {
+                        input: `${n}\n${arr.join(' ')}`,
+                        solOut: solVal,
+                        bruteOut: correctVal,
+                        isMatch: isMatch,
+                        errorReason: isMatch ? "" : `Integer Overflow! ผลคูณจริงคือ ${correctVal} แต่ตัวแปร int 32-bit ล้นขอบเขตกลายเป็น ${solVal}`
+                    };
+                }
+            },
+            offbyone: {
+                title: "Array Search (Off-by-one SegFault)",
+                algo: "Loop bound i <= N",
+                generatorCode: `int n = randRange(3, 6);
+cout << n << "\\n";
+for (int i = 0; i < n; i++) cout << randRange(1, 20) << " ";
+cout << "\\n" << randRange(1, 25);`,
+                solutionCode: `int findLast(int n, vector<int>& a, int x) {
+    int idx = -1;
+    // บั๊ก: i <= n ทำให้เข้าถึง a[n] ซึ่งอยู่นอกขอบเขต!
+    for (int i = 0; i <= n; i++) {
+        if (a[i] == x) idx = i;
+    }
+    return idx;
+}`,
+                runCase: (trial) => {
+                    const n = Math.floor(Math.random() * 4) + 3;
+                    const arr = Array.from({length: n}, () => Math.floor(Math.random() * 20) + 1);
+                    const target = Math.random() < 0.6 ? arr[Math.floor(Math.random() * n)] : 99;
+                    const correctIdx = arr.lastIndexOf(target);
+
+                    const crashes = (trial >= 3);
+                    const solOut = crashes ? "RTE (SIGSEGV)" : correctIdx.toString();
+                    const isMatch = (solOut === correctIdx.toString());
+
+                    return {
+                        input: `${n}\n${arr.join(' ')}\n${target}`,
+                        solOut: solOut,
+                        bruteOut: correctIdx.toString(),
+                        isMatch: isMatch,
+                        errorReason: isMatch ? "" : "Runtime Error! การเข้าถึง a[n] (ดัชนีที่ " + n + ") นอกพื้นที่ของ Array ขนาด " + n
+                    };
+                }
+            },
+            prime_edge: {
+                title: "Primality Check (Corner Case n=1)",
+                algo: "Square Root Check",
+                generatorCode: `// สุ่มค่า 1 ถึง 50 เพื่อดัก Corner Cases
+cout << randRange(1, 50) << "\\n";`,
+                solutionCode: `bool isPrime(int n) {
+    // บั๊ก: ลืมดัก if (n <= 1) return false;
+    for (int i = 2; i * i <= n; i++) {
+        if (n % i == 0) return false;
+    }
+    return true; // เลข 1 จะหลุดมาตอบ true!
+}`,
+                runCase: (trial) => {
+                    let n;
+                    if (trial === 3 || Math.random() < 0.25) n = 1;
+                    else n = Math.floor(Math.random() * 30) + 2;
+
+                    function isPrimeOracle(x) {
+                        if (x <= 1) return false;
+                        for (let d = 2; d * d <= x; d++) if (x % d === 0) return false;
+                        return true;
+                    }
+
+                    let sol;
+                    if (n === 1) sol = true;
+                    else sol = isPrimeOracle(n);
+
+                    const correct = isPrimeOracle(n);
+                    const isMatch = (sol === correct);
+
+                    return {
+                        input: `${n}`,
+                        solOut: sol ? "PRIME" : "NOT_PRIME",
+                        bruteOut: correct ? "PRIME" : "NOT_PRIME",
+                        isMatch: isMatch,
+                        errorReason: isMatch ? "" : `Corner Case ล้มเหลว! n = 1 ไม่ใช่จำนวนเฉพาะ แต่โปรแกรมตอบ PRIME`
+                    };
+                }
+            },
+            correct: {
+                title: "GCD Euclidean Algorithm (Correct)",
+                algo: "Euclidean Modulo O(log N)",
+                generatorCode: `cout << randRange(1, 1000) << " " << randRange(1, 1000);`,
+                solutionCode: `int gcd(int a, int b) {
+    while (b != 0) {
+        int t = b;
+        b = a % b;
+        a = t;
+    }
+    return a;
+}`,
+                runCase: () => {
+                    const a = Math.floor(Math.random() * 800) + 1;
+                    const b = Math.floor(Math.random() * 800) + 1;
+                    function gcdOracle(x, y) {
+                        while (y !== 0) { const t = y; y = x % y; x = t; }
+                        return x;
+                    }
+                    const ans = gcdOracle(a, b).toString();
+                    return {
+                        input: `${a} ${b}`,
+                        solOut: ans,
+                        bruteOut: ans,
+                        isMatch: true,
+                        errorReason: ""
+                    };
+                }
+            }
+        };
+
+        const selectStressProblem = document.getElementById('select-stress-problem');
+        const inputStressTrials = document.getElementById('input-stress-trials');
+        const btnRunStress = document.getElementById('btn-run-stress');
+        const labelStressRun = document.getElementById('label-stress-run');
+        const btnStepStress = document.getElementById('btn-step-stress');
+        const btnResetStress = document.getElementById('btn-reset-stress');
+
+        const codeStressGen = document.getElementById('code-stress-gen');
+        const codeStressSol = document.getElementById('code-stress-sol');
+        const badgeSolutionAlgo = document.getElementById('badge-solution-algo');
+        const boxCurrentInput = document.getElementById('box-current-input');
+        const boxOutSol = document.getElementById('box-out-sol');
+        const boxOutBrute = document.getElementById('box-out-brute');
+        const labelStressDiff = document.getElementById('label-stress-diff');
+        const stressProgressBar = document.getElementById('stress-progress-bar');
+        const stressProgressText = document.getElementById('stress-progress-text');
+        const stressBadgeStatus = document.getElementById('stress-badge-status');
+        const logStressContainer = document.getElementById('log-stress-container');
+        const badgePassCount = document.getElementById('badge-pass-count');
+        const statTotalTrials = document.getElementById('stat-total-trials');
+        const statFailedTrials = document.getElementById('stat-failed-trials');
+
+        function updateStressProblemView() {
+            const probKey = selectStressProblem.value;
+            const data = stressProblems[probKey];
+            codeStressGen.textContent = data.generatorCode;
+            codeStressSol.textContent = data.solutionCode;
+            badgeSolutionAlgo.textContent = data.algo;
+            resetStress();
+        }
+
+        function resetStress() {
+            stopStress();
+            currentStressTrial = 0;
+            passedStressCount = 0;
+            maxStressTrials = parseInt(inputStressTrials.value, 10) || 50;
+
+            boxCurrentInput.textContent = "รอเริ่มการทดสอบ...";
+            boxOutSol.textContent = "-";
+            boxOutSol.className = "bg-slate-950 rounded-xl border border-rose-500/30 p-2 font-mono text-xs text-rose-200 min-h-[50px] flex items-center justify-center";
+            boxOutBrute.textContent = "-";
+            boxOutBrute.className = "bg-slate-950 rounded-xl border border-emerald-500/30 p-2 font-mono text-xs text-emerald-200 min-h-[50px] flex items-center justify-center";
+
+            labelStressDiff.textContent = "ยังไม่มีการทดสอบ";
+            labelStressDiff.className = "font-bold text-slate-300";
+
+            stressProgressBar.style.width = "0%";
+            stressProgressText.textContent = `0 / ${maxStressTrials}`;
+            stressBadgeStatus.className = "px-2.5 py-1 rounded-full text-xs font-mono bg-slate-800 text-slate-300 border border-slate-700 flex items-center gap-1.5";
+            stressBadgeStatus.innerHTML = '<span class="w-2 h-2 rounded-full bg-slate-400"></span> พร้อมทดสอบ';
+
+            logStressContainer.innerHTML = '<div class="text-[11px] text-slate-500 text-center py-6 font-mono">กด "เริ่ม Stress Testing" เพื่อดูการเปรียบเทียบคำตอบ</div>';
+            badgePassCount.textContent = "0 Passed";
+            statTotalTrials.textContent = "0";
+            statFailedTrials.textContent = "0";
+        }
+
+        function executeStressStep() {
+            if (currentStressTrial >= maxStressTrials) {
+                stopStress();
+                stressBadgeStatus.className = "px-2.5 py-1 rounded-full text-xs font-mono bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 flex items-center gap-1.5";
+                stressBadgeStatus.innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-400"></span> ผ่านครบทุกเคส!';
+                playSound('ac');
+                return false;
+            }
+
+            currentStressTrial++;
+            const probKey = selectStressProblem.value;
+            const res = stressProblems[probKey].runCase(currentStressTrial);
+
+            boxCurrentInput.textContent = res.input;
+            boxOutSol.textContent = res.solOut;
+            boxOutBrute.textContent = res.bruteOut;
+
+            statTotalTrials.textContent = currentStressTrial;
+            const pct = Math.round((currentStressTrial / maxStressTrials) * 100);
+            stressProgressBar.style.width = `${pct}%`;
+            stressProgressText.textContent = `${currentStressTrial} / ${maxStressTrials}`;
+
+            const logEntry = document.createElement('div');
+            logEntry.className = 'p-2 rounded-lg text-[11px] font-mono flex flex-col gap-1 border transition-all ';
+
+            if (res.isMatch) {
+                passedStressCount++;
+                playSound('pass');
+                logEntry.className += 'bg-emerald-950/40 border-emerald-800/60 text-emerald-300';
+                logEntry.innerHTML = `<div class="flex items-center justify-between"><span>#${currentStressTrial} [PASSED]</span> <span>Ans: ${res.bruteOut}</span></div>`;
+                labelStressDiff.textContent = `✓ Case #${currentStressTrial} คำตอบตรงกัน (${res.bruteOut})`;
+                labelStressDiff.className = "font-bold text-emerald-400";
+            } else {
+                playSound('fail');
+                stopStress();
+                logEntry.className += 'bg-rose-950/70 border-rose-800 text-rose-300 font-bold';
+                logEntry.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <span>#${currentStressTrial} [MISMATCH FOUND!]</span>
+                        <span class="text-rose-400">Diff!</span>
+                    </div>
+                    <div class="p-1.5 rounded bg-rose-900/60 border border-rose-700/60 text-[10px] text-rose-200 mt-0.5">
+                        ${res.errorReason}
+                    </div>
+                `;
+                labelStressDiff.textContent = `✗ Case #${currentStressTrial} ไม่ตรงกัน! (พบบั๊ก)`;
+                labelStressDiff.className = "font-bold text-rose-400";
+
+                boxOutSol.className = "bg-rose-950/80 rounded-xl border-2 border-rose-500 p-2 font-mono text-xs text-rose-200 min-h-[50px] flex items-center justify-center font-bold";
+                boxOutBrute.className = "bg-emerald-950/80 rounded-xl border-2 border-emerald-500 p-2 font-mono text-xs text-emerald-200 min-h-[50px] flex items-center justify-center font-bold";
+
+                stressBadgeStatus.className = "px-2.5 py-1 rounded-full text-xs font-mono bg-rose-500/20 text-rose-300 border border-rose-500/40 flex items-center gap-1.5";
+                stressBadgeStatus.innerHTML = '<span class="w-2 h-2 rounded-full bg-rose-400 animate-ping"></span> พบบั๊กแล้ว (Counterexample)';
+                statFailedTrials.textContent = "1";
+            }
+
+            badgePassCount.textContent = `${passedStressCount} Passed`;
+
+            if (currentStressTrial === 1) logStressContainer.innerHTML = '';
+            logStressContainer.insertBefore(logEntry, logStressContainer.firstChild);
+
+            return res.isMatch;
+        }
+
+        function startStress() {
+            stressRunning = true;
+            btnRunStress.classList.remove('bg-rose-600', 'hover:bg-rose-500');
+            btnRunStress.classList.add('bg-amber-600', 'hover:bg-amber-500');
+            labelStressRun.textContent = 'พักการทดสอบ';
+
+            stressTimer = setInterval(() => {
+                const continueTesting = executeStressStep();
+                if (!continueTesting) stopStress();
+            }, 250);
+        }
+
+        function stopStress() {
+            stressRunning = false;
+            if (stressTimer) {
+                clearInterval(stressTimer);
+                stressTimer = null;
+            }
+            btnRunStress.classList.remove('bg-amber-600', 'hover:bg-amber-500');
+            btnRunStress.classList.add('bg-rose-600', 'hover:bg-rose-500');
+            labelStressRun.textContent = 'เริ่ม Stress Testing';
+        }
+
+        selectStressProblem.addEventListener('change', updateStressProblemView);
+        btnRunStress.addEventListener('click', () => {
+            if (stressRunning) stopStress();
+            else startStress();
+        });
+        btnStepStress.addEventListener('click', () => {
+            stopStress();
+            executeStressStep();
+        });
+        btnResetStress.addEventListener('click', resetStress);
+
+        const graderSubtasksData = {
+            perfect: {
+                totalScore: 100,
+                diagnostics: "Verdict: ACCEPTED (100 / 100)\n\nโปรแกรมทำงานถูกต้องสมบูรณ์ ทุกชุดทดสอบให้คำตอบตรงกับ Master Output และใช้เวลาประมวลผลสูงสุดเพียง 0.04 วินาที (จากเวลาที่กำหนด 1.0 วินาที) ไม่พบปัญหา Memory หรือ Overflow ใดๆ",
+                subtasks: [
+                    { id: 1, name: "Subtask 1: N ≤ 100", score: 20, cases: ["P", "P", "P", "P", "P"] },
+                    { id: 2, name: "Subtask 2: N ≤ 2,000", score: 30, cases: ["P", "P", "P", "P", "P"] },
+                    { id: 3, name: "Subtask 3: N ≤ 100,000 (Full Constraints)", score: 50, cases: ["P", "P", "P", "P", "P"] }
+                ]
+            },
+            tle: {
+                totalScore: 20,
+                diagnostics: "Verdict: PARTIAL (20 / 100)\n\nSubtask 1: ผ่านฉลุย (20 คะแนน)\nSubtask 2 & 3: ติด Time Limit Exceeded (T)\n\nสาเหตุ: มีการใช้ Nested Loop O(N²) สำหรับ N = 100,000 จะทำงานถึง 10¹⁰ ครั้ง ใช้เวลาเกิน 1.0 วินาทีแน่นอน แนะนำให้ปรับเป็น O(N log N) ด้วย Sorting หรือ Hash Table",
+                subtasks: [
+                    { id: 1, name: "Subtask 1: N ≤ 100", score: 20, cases: ["P", "P", "P", "P", "P"] },
+                    { id: 2, name: "Subtask 2: N ≤ 2,000", score: 0, cases: ["T", "T", "T", "T", "T"] },
+                    { id: 3, name: "Subtask 3: N ≤ 100,000 (Full Constraints)", score: 0, cases: ["T", "T", "T", "T", "T"] }
+                ]
+            },
+            overflow: {
+                totalScore: 50,
+                diagnostics: "Verdict: PARTIAL (50 / 100)\n\nSubtask 1 & 2: ผ่านฉลุย เพราะค่าตัวเลข Ai ≤ 1,000\nSubtask 3: เกิด Wrong Answer (-)\n\nสาเหตุ: ใน Subtask 3 ข้อมูลตัวเลขมีค่าได้ถึง 10⁹ ผลคูณคู่ตัวเลขจะเกิน 2×10⁹ ซึ่งล้นขอบเขตของ signed int 32-bit กลายเป็นเลขติดลบ ให้เปลี่ยนตัวแปรคำนวณเป็น 'long long'",
+                subtasks: [
+                    { id: 1, name: "Subtask 1: N ≤ 100, Ai ≤ 10³", score: 20, cases: ["P", "P", "P", "P", "P"] },
+                    { id: 2, name: "Subtask 2: N ≤ 2,000, Ai ≤ 10³", score: 30, cases: ["P", "P", "P", "P", "P"] },
+                    { id: 3, name: "Subtask 3: N ≤ 10⁵, Ai ≤ 10⁹ (Large Values)", score: 0, cases: ["-", "-", "-", "-", "-"] }
+                ]
+            },
+            segfault: {
+                totalScore: 0,
+                diagnostics: "Verdict: RUNTIME ERROR (0 / 100)\n\nSignal: SIGSEGV (Segmentation Fault)\n\nสาเหตุ: โปรแกรมพยายามเข้าถึง Memory นอกขอบเขตที่จองไว้ พบว่าประกาศขนาดอาร์เรย์คงที่ไว้เพียง 'int arr[1000]' แต่ชุดทดสอบแรกส่งข้อมูล N = 10,000 ตัว ทำให้เกิดหน่วยความจำเสียหายและโปรแกรม Crash ทันที",
+                subtasks: [
+                    { id: 1, name: "Subtask 1: N ≤ 10,000", score: 0, cases: ["X", "X", "X", "X", "X"] },
+                    { id: 2, name: "Subtask 2: N ≤ 50,000", score: 0, cases: ["X", "X", "X", "X", "X"] },
+                    { id: 3, name: "Subtask 3: N ≤ 100,000", score: 0, cases: ["X", "X", "X", "X", "X"] }
+                ]
+            }
+        };
+
+        const graderSubtasksContainer = document.getElementById('grader-subtasks-container');
+        const graderTotalScore = document.getElementById('grader-total-score');
+        const graderDiagnosticBox = document.getElementById('grader-diagnostic-box');
+        const btnSubmitGrader = document.getElementById('btn-submit-grader');
+        let currentGraderSelection = 'perfect';
+
+        document.querySelectorAll('.preset-grader-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.preset-grader-btn').forEach(b => {
+                    b.classList.remove('border-2', 'border-indigo-500');
+                    b.classList.add('border-slate-800');
+                });
+                btn.classList.add('border-2', 'border-indigo-500');
+                btn.classList.remove('border-slate-800');
+                currentGraderSelection = btn.dataset.code;
+                renderGraderView(false);
+                playSound('click');
+            });
+        });
+
+        function renderGraderView(isSubmitted) {
+            const data = graderSubtasksData[currentGraderSelection];
+            graderSubtasksContainer.innerHTML = '';
+
+            if (!isSubmitted) {
+                graderTotalScore.textContent = "-- / 100";
+                graderTotalScore.className = "text-slate-400 text-sm";
+                graderDiagnosticBox.textContent = "กดปุ่ม 'ส่งโค้ดขึ้น Grader (Submit)' เพื่อดูผลการตัดสินแบบเรียลไทม์";
+            } else {
+                graderTotalScore.textContent = `${data.totalScore} / 100`;
+                graderTotalScore.className = data.totalScore === 100 ? "text-emerald-400 text-sm font-bold" : "text-amber-400 text-sm font-bold";
+                graderDiagnosticBox.textContent = data.diagnostics;
+                if (data.totalScore === 100) playSound('ac');
+                else playSound('fail');
+            }
+
+            data.subtasks.forEach(sub => {
+                const row = document.createElement('div');
+                row.className = 'bg-slate-900 border border-slate-800 rounded-xl p-3 flex flex-wrap items-center justify-between gap-2';
+
+                let badgesHtml = '';
+                sub.cases.forEach((c) => {
+                    let colorClass = 'bg-slate-800 text-slate-400 border-slate-700';
+                    let label = '?';
+
+                    if (isSubmitted) {
+                        label = c;
+                        if (c === 'P') colorClass = 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 font-bold';
+                        else if (c === '-') colorClass = 'bg-rose-500/20 text-rose-300 border-rose-500/40 font-bold';
+                        else if (c === 'T') colorClass = 'bg-amber-500/20 text-amber-300 border-amber-500/40 font-bold';
+                        else if (c === 'X') colorClass = 'bg-purple-500/20 text-purple-300 border-purple-500/40 font-bold';
+                    }
+
+                    badgesHtml += `<span class="w-6 h-6 rounded flex items-center justify-center font-mono text-xs border ${colorClass}">${label}</span>`;
+                });
+
+                row.innerHTML = `
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-semibold text-slate-200">${sub.name}</span>
+                        <span class="text-[10px] font-mono text-slate-400">(${sub.score} pts)</span>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        ${badgesHtml}
+                    </div>
+                `;
+                graderSubtasksContainer.appendChild(row);
+            });
+        }
+
+        btnSubmitGrader.addEventListener('click', () => {
+            renderGraderView(true);
+        });
+
+        const bugHuntScenarios = {
+            overflow_trap: {
+                fileName: "max_product.cpp",
+                bugLine: 4,
+                lines: [
+                    "long long solve(int n, vector<int>& a) {",
+                    "    sort(a.begin(), a.end());",
+                    "    // ต้องการหาผลคูณของสองค่าที่มากที่สุด",
+                    "    long long ans = a[n - 1] * a[n - 2];",
+                    "    return ans;",
+                    "}"
+                ],
+                fixedLines: [
+                    "long long solve(int n, vector<int>& a) {",
+                    "    sort(a.begin(), a.end());",
+                    "    // แก้ไข: Typecast ตัวใดตัวหนึ่งเป็น (long long) ก่อนคูณ",
+                    "    long long ans = (long long)a[n - 1] * a[n - 2];",
+                    "    return ans;",
+                    "}"
+                ],
+                description: "แม้ว่าตัวแปร 'ans' จะถูกประกาศเป็น long long แต่ฝั่งขวามือ 'a[n-1] * a[n-2]' เป็นการคูณกันของ int 32-bit สองตัว ซึ่งจะถูกคำนวณในชนิดข้อมูล int ก่อนเสมอ หากผลคูณเกิน 2×10⁹ จะเกิด Overflow เป็นเลขติดลบ แล้วจึงส่งไปเก็บใน ans",
+                bestPractice: "ทำการแปลงชนิดข้อมูลก่อนคำนวณเสมอ: (long long)a[n-1] * a[n-2] หรือประกาศ vector เป็น vector<long long> ตั้งแต่แรก"
+            },
+            off_by_one: {
+                fileName: "prefix_sum.cpp",
+                bugLine: 3,
+                lines: [
+                    "void buildPrefix(int n, vector<int>& a) {",
+                    "    vector<int> pref(n + 1, 0);",
+                    "    for (int i = 0; i <= n; i++) {",
+                    "        pref[i + 1] = pref[i] + a[i];",
+                    "    }",
+                    "}"
+                ],
+                fixedLines: [
+                    "void buildPrefix(int n, vector<int>& a) {",
+                    "    vector<int> pref(n + 1, 0);",
+                    "    // แก้ไข: วนลูปเฉพาะดัชนีที่มีอยู่จริง i < n",
+                    "    for (int i = 0; i < n; i++) {",
+                    "        pref[i + 1] = pref[i] + a[i];",
+                    "    }",
+                    "}"
+                ],
+                description: "เงื่อนไขลูป 'i <= n' ทำให้ในรอบสุดท้ายตัวแปร i = n ส่งผลให้มีการเรียก 'a[n]' ซึ่งอยู่นอกขอบเขตของอาร์เรย์ (0 ถึง n-1) ทำให้เกิด Segmentation Fault (SIGSEGV) หรืออ่านค่าขยะใน Memory",
+                bestPractice: "ตรวจสอบขอบเขตดัชนีอย่างเข้มงวด: ในระบบ 0-based index อาร์เรย์ขนาด N จะมีดัชนีตั้งแต่ 0 ถึง N - 1 เท่านั้น"
+            },
+            testcase_reset: {
+                fileName: "multi_testcases.cpp",
+                bugLine: 4,
+                lines: [
+                    "int main() {",
+                    "    int T; cin >> T;",
+                    "    vector<int> history;",
+                    "    while (T--) {",
+                    "        int n; cin >> n;",
+                    "        history.push_back(n);",
+                    "        // คำนวณคำตอบ...",
+                    "    }",
+                    "}"
+                ],
+                fixedLines: [
+                    "int main() {",
+                    "    int T; cin >> T;",
+                    "    while (T--) {",
+                    "        // แก้ไข: ประกาศตัวแปรหรือเรียก history.clear() ภายในลูป T",
+                    "        vector<int> history;",
+                    "        int n; cin >> n;",
+                    "        history.push_back(n);",
+                    "    }",
+                    "}"
+                ],
+                description: "การประกาศตัวแปร 'history' ไว้นอกลูป while (T--) โดยไม่มีการสั่ง history.clear() จะทำให้ข้อมูลจาก Testcase ก่อนหน้าตกค้างและส่งผลกระทบต่อคำตอบของ Testcase ถัดไปจนได้ Wrong Answer (-)",
+                bestPractice: "หากโจทย์มีหลาย Testcases แนะนำให้สร้างฟังก์ชัน solve() แยกออกมา หรือประกาศตัวแปรและล้างค่าใหม่หมดภายในลูปย่อย"
+            },
+            zero_div: {
+                fileName: "modular_inverse.cpp",
+                bugLine: 4,
+                lines: [
+                    "int divideModulo(int a, int b, int m) {",
+                    "    // ฟังก์ชันคำนวณ (a / b) % m",
+                    "    if (m <= 0) return -1;",
+                    "    int rem = a % b;",
+                    "    return rem;",
+                    "}"
+                ],
+                fixedLines: [
+                    "int divideModulo(int a, int b, int m) {",
+                    "    if (m <= 0 || b == 0) return -1; // แก้ไข: ดักจับกรณี b == 0",
+                    "    int rem = a % b;",
+                    "    return rem;",
+                    "}"
+                ],
+                description: "คำสั่ง a % b หรือ a / b จะทำให้ระบบปฏิบัติการส่งสัญญาณ SIGFPE (Floating Point Exception) ทันทีหากค่า b = 0 ส่งผลให้โปรแกรม Crash กลางคันและได้ผลลัพธ์เป็น Runtime Error (X)",
+                bestPractice: "ก่อนทำการหาร (/) หรือหารเอาเศษ (%) ทุกครั้ง ต้องแน่ใจว่าตัวหารไม่มีโอกาสเป็น 0 เด็ดขาด"
+            },
+            endl_tle: {
+                fileName: "fast_io_problem.cpp",
+                bugLine: 6,
+                lines: [
+                    "int main() {",
+                    "    ios_base::sync_with_stdio(false);",
+                    "    cin.tie(NULL);",
+                    "    int n = 100000; // มีการพิมพ์ผล 10^5 บรรทัด",
+                    "    for (int i = 1; i <= n; i++) {",
+                    "        cout << i << endl;",
+                    "    }",
+                    "}"
+                ],
+                fixedLines: [
+                    "int main() {",
+                    "    ios_base::sync_with_stdio(false);",
+                    "    cin.tie(NULL);",
+                    "    int n = 100000;",
+                    "    for (int i = 1; i <= n; i++) {",
+                    "        cout << i << '\\n'; // แก้ไข: ใช้ '\\n' แทน endl เพื่อหลีกเลี่ยงการ Flush ซ้ำๆ",
+                    "    }",
+                    "}"
+                ],
+                description: "คำสั่ง 'std::endl' ไม่ได้ทำแค่การขึ้นบรรทัดใหม่ แต่ยังสั่ง 'fflush()' บังคับเขียนข้อมูลลงดิสก์ทันทีทุกครั้ง หากพิมพ์ 10⁵ บรรทัด จะทำให้โปรแกรมช้าลงกว่าเดิม 10-50 เท่าจนติด TLE",
+                bestPractice: "ในการแข่งขัน ให้ใช้ '\\n' เสมอแทน 'std::endl' ควบคู่กับ ios_base::sync_with_stdio(false); cin.tie(NULL);"
+            }
+        };
+
+        const selectHuntCase = document.getElementById('select-hunt-case');
+        const huntFileName = document.getElementById('hunt-file-name');
+        const huntCodeBox = document.getElementById('hunt-code-box');
+        const huntExplanationContent = document.getElementById('hunt-explanation-content');
+        const huntBestPractice = document.getElementById('hunt-best-practice');
+        const btnFixHuntBug = document.getElementById('btn-fix-hunt-bug');
+        const huntStatusBadge = document.getElementById('hunt-status-badge');
+        let isHuntFixed = false;
+
+        function renderHuntCode() {
+            const key = selectHuntCase.value;
+            const data = bugHuntScenarios[key];
+            huntFileName.textContent = data.fileName;
+            huntCodeBox.innerHTML = '';
+
+            const linesToRender = isHuntFixed ? data.fixedLines : data.lines;
+
+            linesToRender.forEach((text, idx) => {
+                const lineNum = idx + 1;
+                const lineDiv = document.createElement('div');
+                lineDiv.className = 'px-2 py-0.5 rounded transition-all cursor-pointer hover:bg-slate-900 flex items-start gap-2 select-none';
+
+                if (!isHuntFixed && lineNum === data.bugLine) {
+                    lineDiv.classList.add('code-highlight-bug');
+                } else if (isHuntFixed && lineNum === data.bugLine) {
+                    lineDiv.classList.add('code-highlight-fixed');
+                }
+
+                lineDiv.innerHTML = `
+                    <span class="text-slate-600 select-none w-5 text-right font-mono text-[11px]">${lineNum}</span>
+                    <span class="flex-1 ${!isHuntFixed && lineNum === data.bugLine ? 'text-rose-200 font-semibold' : 'text-slate-300'}">${escapeHtml(text)}</span>
+                `;
+
+                lineDiv.addEventListener('click', () => {
+                    if (lineNum === data.bugLine && !isHuntFixed) {
+                        playSound('fail');
+                    } else {
+                        playSound('click');
+                    }
+                });
+
+                huntCodeBox.appendChild(lineDiv);
+            });
+
+            if (isHuntFixed) {
+                huntStatusBadge.className = 'text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40';
+                huntStatusBadge.textContent = 'แก้ไขเรียบร้อย ✓';
+                huntExplanationContent.innerHTML = `<div class="p-2.5 rounded-lg bg-emerald-950/40 border border-emerald-800 text-emerald-300 font-semibold">บั๊กได้รับการซ่อมแซมแล้ว! บรรทัดที่ ${data.bugLine} ได้รับการแก้ไขตามมาตรฐานการแข่งขัน พร้อมส่งขึ้น Grader และได้คะแนนเต็ม 100</div>`;
+            } else {
+                huntStatusBadge.className = 'text-[10px] font-mono px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 border border-rose-500/40';
+                huntStatusBadge.textContent = 'พบบั๊ก!';
+                huntExplanationContent.innerHTML = `<p>${data.description}</p>`;
+            }
+
+            huntBestPractice.textContent = data.bestPractice;
+        }
+
+        function escapeHtml(str) {
+            return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+
+        selectHuntCase.addEventListener('change', () => {
+            isHuntFixed = false;
+            btnFixHuntBug.innerHTML = '<svg class="w-3.5 h-3.5 mr-1 inline" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg> แก้ไขบั๊กนี้ (Apply Fix)';
+            renderHuntCode();
+        });
+
+        btnFixHuntBug.addEventListener('click', () => {
+            isHuntFixed = !isHuntFixed;
+            btnFixHuntBug.innerHTML = isHuntFixed 
+                ? '<svg class="w-3.5 h-3.5 mr-1 inline" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg> ดูโค้ดเดิมที่มีบั๊ก' 
+                : '<svg class="w-3.5 h-3.5 mr-1 inline" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg> แก้ไขบั๊กนี้ (Apply Fix)';
+            playSound(isHuntFixed ? 'ac' : 'click');
+            renderHuntCode();
+        });
+
+        const bashScriptTemplate = `#!/usr/bin/env bash
+# ==============================================================
+# Competitive Programming Stress Test Script (ค่าย 1 สอวน.)
+# ==============================================================
+# วัตถุประสงค์: สุ่มสร้าง Input อัตโนมัติ แล้วเปรียบเทียบคำตอบระหว่าง
+# โค้ดที่ต้องการทดสอบ (solution) กับโค้ดแบบถึกที่มั่นใจว่าถูก (brute)
+# ==============================================================
+
+set -e # หยุดทันทีหากคอมไพล์ไม่ผ่าน
+
+echo "--- 1. Compiling Source Files ---"
+g++ -O3 solution.cpp -o solution
+g++ -O3 brute.cpp -o brute
+g++ -O3 generator.cpp -o generator
+
+echo "--- 2. Starting Stress Testing Loop ---"
+for ((i = 1; ; i++)); do
+    # สร้าง Input สุ่ม
+    ./generator > input.txt
+    
+    # รันโปรแกรมทั้งสอง
+    ./solution < input.txt > my_out.txt
+    ./brute < input.txt > correct_out.txt
+    
+    # ตรวจสอบความแตกต่างของผลลัพธ์ (ข้ามช่องว่างส่วนเกิน)
+    if diff -w -q my_out.txt correct_out.txt > /dev/null; then
+        echo -ne "Test Case #$i: \\033[32mPASSED\\033[0m\\r"
+    else
+        echo -e "\\n\\033[31m[!] MISMATCH FOUND AT TEST CASE #$i!\\033[0m"
+        echo "======================================"
+        echo "[1] Failing Input (input.txt):"
+        cat input.txt
+        echo -e "\\n[2] Your Solution Output (my_out.txt):"
+        cat my_out.txt
+        echo -e "\\n[3] Correct Oracle Output (correct_out.txt):"
+        cat correct_out.txt
+        echo "======================================"
+        break
+    fi
+done`;
+
+        const displayBashScript = document.getElementById('display-bash-script');
+        const btnCopyScript = document.getElementById('btn-copy-script');
+        const copyScriptText = document.getElementById('copy-script-text');
+        const copyScriptToast = document.getElementById('copy-script-toast');
+
+        displayBashScript.textContent = bashScriptTemplate;
+
+        btnCopyScript.addEventListener('click', () => {
+            const temp = document.createElement('textarea');
+            temp.value = bashScriptTemplate;
+            temp.style.position = 'fixed';
+            temp.style.left = '-9999px';
+            document.body.appendChild(temp);
+            temp.focus();
+            temp.select();
+            try {
+                document.execCommand('copy');
+                copyScriptText.textContent = 'คัดลอกสำเร็จ!';
+                copyScriptToast.classList.remove('hidden');
+                setTimeout(() => {
+                    copyScriptToast.classList.add('hidden');
+                    copyScriptText.textContent = 'คัดลอกสคริปต์ Bash';
+                }, 2500);
+            } catch (err) {
+                console.error(err);
+            }
+            document.body.removeChild(temp);
+        });
+
+        const btnToggleSound = document.getElementById('btn-toggle-sound');
+        const soundIconOn = document.getElementById('sound-icon-on');
+        const soundIconOff = document.getElementById('sound-icon-off');
+
+        btnToggleSound.addEventListener('click', () => {
+            soundEnabled = !soundEnabled;
+            if (soundEnabled) {
+                soundIconOn.classList.remove('hidden');
+                soundIconOff.classList.add('hidden');
+            } else {
+                soundIconOn.classList.add('hidden');
+                soundIconOff.classList.remove('hidden');
+            }
+        });
+
+        // Initial setup execution
+        updateStressProblemView();
+        renderGraderView(false);
+        renderHuntCode();
+    })();
+    </script>
+</body>
+</html>

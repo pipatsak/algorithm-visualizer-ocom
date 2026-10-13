@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fast Modular Exponentiation Visualizer - ค่าย 1 สอวน. คอมพิวเตอร์</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tone.js for synthesized audio effects -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Google Fonts Prompt & Fira Code -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Prompt', sans-serif; }
+        code, pre, .font-mono { font-family: 'Fira Code', monospace; }
+        .code-highlight {
+            background-color: rgba(14, 165, 233, 0.28) !important;
+            border-left: 4px solid #38bdf8 !important;
+            color: #ffffff !important;
+            font-weight: 600;
+            padding-left: 8px;
+            transition: all 0.15s ease-in-out;
+        }
+        /* Custom scrollbars */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col antialiased selection:bg-cyan-500 selection:text-white">
+
+    <header class="border-b border-slate-800 bg-slate-900/90 backdrop-blur sticky top-0 z-40 px-4 py-3">
+        <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-fuchsia-600 via-indigo-600 to-cyan-400 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+                    <i data-lucide="zap" class="w-5 h-5 text-white"></i>
+                </div>
+                <div>
+                    <h1 class="text-base md:text-lg font-bold text-white flex items-center gap-2">
+                        เครื่องมือจำลองการยกกำลังอย่างรวดเร็ว (Fast Modular Exponentiation)
+                        <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-fuchsia-500/20 text-fuchsia-300 border border-fuchsia-500/30">O(log B) Binary Exponentiation</span>
+                    </h1>
+                    <p class="text-xs text-slate-400">ค่ายโอลิมปิกวิชาการ สอวน. คอมพิวเตอร์ ค่ายที่ 1 — คำนวณ (A^B) % M ด้วยการแตกบิตฐานสอง</p>
+                </div>
+            </div>
+
+            <!-- Controls: Sound Toggle -->
+            <div class="flex items-center gap-2 bg-slate-800/90 p-1.5 rounded-xl border border-slate-700">
+                <button id="btn-toggle-sound" title="เปิด/ปิดเสียงเอฟเฟกต์" class="px-2.5 py-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-slate-700/60 transition-all flex items-center gap-1.5 text-xs font-medium">
+                    <i data-lucide="volume-2" id="sound-icon" class="w-4 h-4"></i>
+                    <span id="sound-label">เสียง: เปิด</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 space-y-6">
+        <!-- Input & Control Card -->
+        <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 md:p-5 shadow-xl backdrop-blur-sm">
+            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-12 gap-4 items-end">
+                <!-- Input Base (A) -->
+                <div class="lg:col-span-3">
+                    <label class="block text-xs font-medium text-slate-300 mb-1 flex items-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full bg-cyan-400"></span> ฐาน A (Base):
+                    </label>
+                    <input type="number" id="input-base" value="3" min="0" max="1000000000000" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 font-mono">
+                </div>
+
+                <!-- Input Exponent (B) -->
+                <div class="lg:col-span-3">
+                    <label class="block text-xs font-medium text-slate-300 mb-1 flex items-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full bg-fuchsia-400"></span> เลขชี้กำลัง B (Exponent):
+                    </label>
+                    <div class="relative">
+                        <input type="number" id="input-exp" value="13" min="0" max="1000000000000" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-fuchsia-500 focus:ring-1 focus:ring-fuchsia-500 font-mono">
+                        <span id="badge-binary-preview" class="absolute right-2.5 top-2 text-[10px] font-mono text-fuchsia-400/90 bg-fuchsia-950/70 px-1.5 py-0.5 rounded border border-fuchsia-800/40">(1101)₂</span>
+                    </div>
+                </div>
+
+                <!-- Input Modulo (M) -->
+                <div class="lg:col-span-3">
+                    <label class="block text-xs font-medium text-slate-300 mb-1 flex items-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400"></span> ตัวหารเอาเศษ M (Modulo):
+                    </label>
+                    <input type="number" id="input-mod" value="1000" min="1" max="1000000007" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 font-mono">
+                </div>
+
+                <!-- Presets -->
+                <div class="lg:col-span-3 flex flex-wrap items-center justify-start lg:justify-end gap-1.5">
+                    <span class="text-xs text-slate-400 w-full lg:text-right flex items-center justify-start lg:justify-end gap-1 mb-0.5">
+                        <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-400"></i> ตัวอย่าง:
+                    </span>
+                    <button class="preset-btn bg-slate-800 hover:bg-slate-700 border border-slate-700 text-cyan-300 text-xs px-2.5 py-1.5 rounded-xl transition-all" data-a="3" data-b="13" data-m="1000">3¹³ % 1000</button>
+                    <button class="preset-btn bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs px-2.5 py-1.5 rounded-xl transition-all" data-a="2" data-b="10" data-m="1000">2¹⁰ % 1000</button>
+                    <button class="preset-btn bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs px-2.5 py-1.5 rounded-xl transition-all" data-a="5" data-b="21" data-m="100">5²¹ % 100</button>
+                    <button class="preset-btn bg-slate-800 hover:bg-slate-700 border border-slate-700 text-fuchsia-300 border-fuchsia-700/40 text-xs px-2.5 py-1.5 rounded-xl transition-all" data-a="2" data-b="30" data-m="1000000007">2³⁰ % 10⁹+7</button>
+                </div>
+            </div>
+
+            <!-- Playback Controls -->
+            <div class="mt-4 pt-4 border-t border-slate-800 flex flex-wrap items-center justify-between gap-3">
+                <div class="flex items-center gap-3 bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-800">
+                    <span class="text-xs text-slate-400">ความเร็วแอนิเมชัน:</span>
+                    <input type="range" id="slider-speed" min="100" max="1500" step="50" value="500" class="w-28 accent-fuchsia-500 cursor-pointer">
+                    <span id="speed-label" class="text-[11px] font-mono text-fuchsia-400">500ms</span>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <button id="btn-step" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white text-xs font-semibold py-2 px-3.5 rounded-xl flex items-center gap-1.5 transition-all">
+                        <i data-lucide="step-forward" class="w-4 h-4"></i> ทีละขั้นตอน (Step)
+                    </button>
+                    <button id="btn-play" class="bg-fuchsia-600 hover:bg-fuchsia-500 text-white text-xs font-semibold py-2 px-4 rounded-xl flex items-center gap-1.5 shadow-lg shadow-fuchsia-600/30 transition-all">
+                        <i data-lucide="play" id="icon-play" class="w-4 h-4"></i> จำลองอัตโนมัติ
+                    </button>
+                    <button id="btn-reset" class="bg-slate-800 hover:bg-rose-500/20 hover:text-rose-300 border border-slate-700 text-slate-300 text-xs font-semibold py-2 px-3 rounded-xl flex items-center gap-1.5 transition-all">
+                        <i data-lucide="rotate-ccw" class="w-4 h-4"></i> รีเซ็ต
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+            <!-- Left Column: Visualizer Board (7 cols) -->
+            <div class="lg:col-span-7 bg-slate-900/90 border border-slate-800 rounded-2xl p-5 md:p-6 shadow-xl flex flex-col justify-between space-y-5">
+                <div>
+                    <!-- Visualizer Title Strip -->
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+                        <div>
+                            <h2 class="text-sm font-bold uppercase tracking-wider text-slate-200 flex items-center gap-2">
+                                <span class="w-2 h-2 rounded-full bg-fuchsia-400 animate-ping"></span>
+                                ผังการแตกบิตฐานสอง & ทวีคูณฐาน (Binary & Power Ladder)
+                            </h2>
+                            <p class="text-xs text-slate-400 mt-0.5">พิจารณาเลขชี้กำลัง $B$ ทีละบิตต่ำสุด หากบิตเป็น 1 จะคูณสะสมเข้า $res$ แล้วยกกำลังสองฐาน $A \leftarrow A^2 \pmod M$ เสมอ</p>
+                        </div>
+                        <div class="flex items-center gap-2 text-xs bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-800 font-mono">
+                            <span class="text-slate-400">รอบที่: <strong id="stat-step" class="text-fuchsia-400 text-sm">0 / 0</strong></span>
+                        </div>
+                    </div>
+
+                    <!-- Binary Bits Inspector Strip -->
+                    <div class="bg-slate-950 border border-slate-800/90 rounded-xl p-3.5 mb-4">
+                        <div class="flex items-center justify-between text-xs mb-2">
+                            <span class="text-slate-300 font-semibold flex items-center gap-1.5">
+                                <i data-lucide="binary" class="w-3.5 h-3.5 text-fuchsia-400"></i> การแทนเลขชี้กำลัง B ในรูปฐานสอง (Binary Bits):
+                            </span>
+                            <span id="label-bit-power-sum" class="text-[11px] font-mono text-slate-400">
+                                B = <span id="label-cur-exp" class="text-fuchsia-300 font-bold">13</span>
+                            </span>
+                        </div>
+                        <!-- Bit blocks row -->
+                        <div id="bit-blocks-container" class="flex flex-wrap items-center gap-2 py-1">
+                            <!-- Populated dynamically: [2^3: 1] [2^2: 1] [2^1: 0] [2^0: 1] -->
+                        </div>
+                    </div>
+
+                    <!-- Real-time Variables State Grid -->
+                    <div class="grid grid-cols-3 gap-3 mb-4">
+                        <!-- res accumulator -->
+                        <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 relative overflow-hidden">
+                            <div class="text-[10px] text-slate-400 uppercase tracking-wide font-medium flex items-center justify-between">
+                                <span>คำตอบสะสม (res)</span>
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                            </div>
+                            <div id="metric-val-res" class="text-lg sm:text-xl font-bold font-mono text-emerald-400 mt-1">1</div>
+                            <div class="text-[10px] text-slate-500 font-mono truncate mt-0.5" id="metric-desc-res">เริ่มต้น = 1</div>
+                        </div>
+
+                        <!-- current base power -->
+                        <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 relative overflow-hidden">
+                            <div class="text-[10px] text-slate-400 uppercase tracking-wide font-medium flex items-center justify-between">
+                                <span>ฐานยกกำลัง (base = A^(2^k))</span>
+                                <span class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
+                            </div>
+                            <div id="metric-val-base" class="text-lg sm:text-xl font-bold font-mono text-cyan-300 mt-1">3</div>
+                            <div class="text-[10px] text-slate-500 font-mono truncate mt-0.5" id="metric-desc-base">A¹ = 3</div>
+                        </div>
+
+                        <!-- exp remaining -->
+                        <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 relative overflow-hidden">
+                            <div class="text-[10px] text-slate-400 uppercase tracking-wide font-medium flex items-center justify-between">
+                                <span>เลขชี้กำลังเหลือ (exp)</span>
+                                <span class="w-1.5 h-1.5 rounded-full bg-fuchsia-400"></span>
+                            </div>
+                            <div id="metric-val-exp" class="text-lg sm:text-xl font-bold font-mono text-fuchsia-300 mt-1">13</div>
+                            <div class="text-[10px] text-slate-500 font-mono truncate mt-0.5" id="metric-desc-exp">exp >>= 1 (หาร 2)</div>
+                        </div>
+                    </div>
+
+                    <!-- Visual Multiplication Ladder Canvas -->
+                    <div class="bg-slate-950 rounded-xl border border-slate-800/90 p-3 relative overflow-hidden flex flex-col items-center justify-center min-h-[140px]">
+                        <canvas id="ladder-canvas" width="600" height="140" class="max-w-full rounded-lg"></canvas>
+                    </div>
+                </div>
+
+                <!-- Status Banner -->
+                <div>
+                    <!-- Mathematical Expression Card -->
+                    <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 mb-3">
+                        <div class="flex items-center justify-between text-xs text-slate-400 mb-1">
+                            <span class="font-semibold text-slate-300 flex items-center gap-1.5">
+                                <i data-lucide="calculator" class="w-3.5 h-3.5 text-fuchsia-400"></i> สมการคำนวณเป้าหมาย (Modular Formula):
+                            </span>
+                            <span id="badge-calc-state" class="text-[10px] font-mono px-2 py-0.5 rounded bg-fuchsia-500/10 text-fuchsia-300 border border-fuchsia-500/20">กำลังคำนวณ</span>
+                        </div>
+                        <div id="math-display-expr" class="text-base sm:text-lg font-mono font-bold text-fuchsia-300 tracking-wide text-center py-0.5">
+                            3¹³ mod 1000 = ...
+                        </div>
+                    </div>
+
+                    <div id="status-banner" class="p-3.5 rounded-xl bg-slate-950 border border-slate-800 flex items-start gap-3 transition-all">
+                        <div id="status-badge" class="mt-0.5 p-1.5 rounded-lg bg-fuchsia-500/20 text-fuchsia-400 shrink-0">
+                            <i data-lucide="info" class="w-4 h-4"></i>
+                        </div>
+                        <div class="flex-1">
+                            <h3 id="status-title" class="text-xs font-bold text-slate-200 mb-0.5">สถานะการทำงาน</h3>
+                            <p id="status-desc" class="text-xs text-slate-400 leading-relaxed">กดปุ่ม "จำลองอัตโนมัติ" หรือ "ทีละขั้นตอน (Step)" เพื่อเริ่มต้นการคำนวณ</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Trace Table & Synchronized Code (5 cols) -->
+            <div class="lg:col-span-5 bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col justify-between space-y-4">
+                <div>
+                    <!-- Trace History Table -->
+                    <div class="border-b border-slate-800 pb-3 mb-3">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+                                <i data-lucide="table" class="w-3.5 h-3.5 text-cyan-400"></i>
+                                ตารางการทำงานของตัวแปร (Execution Trace)
+                            </span>
+                            <span class="text-[10px] font-mono text-slate-500">O(log B) steps</span>
+                        </div>
+                        <div class="max-h-[160px] overflow-y-auto bg-slate-950 rounded-xl border border-slate-800 p-1">
+                            <table class="w-full text-[11px] font-mono text-left">
+                                <thead>
+                                    <tr class="text-slate-400 border-b border-slate-800 text-[10px]">
+                                        <th class="py-1 px-1.5">รอบ</th>
+                                        <th class="py-1 px-1.5">exp</th>
+                                        <th class="py-1 px-1.5 text-fuchsia-300">บิต (exp&1)</th>
+                                        <th class="py-1 px-1.5 text-emerald-300">res ใหม่</th>
+                                        <th class="py-1 px-1.5 text-cyan-300">base ใหม่</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="trace-table-body" class="divide-y divide-slate-900 text-slate-300">
+                                    <!-- Populated dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Code Header Strip -->
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-2 mb-2">
+                        <div class="flex items-center gap-2">
+                            <div class="flex gap-1.5">
+                                <span class="w-3 h-3 rounded-full bg-rose-500/80 inline-block"></span>
+                                <span class="w-3 h-3 rounded-full bg-amber-500/80 inline-block"></span>
+                                <span class="w-3 h-3 rounded-full bg-emerald-500/80 inline-block"></span>
+                            </div>
+                            <span class="text-xs font-mono text-slate-400 font-semibold ml-2">power_mod.cpp</span>
+                        </div>
+                        <span class="text-[11px] font-mono px-2 py-0.5 rounded bg-fuchsia-500/10 text-fuchsia-400 border border-fuchsia-500/20">Binary Exponentiation</span>
+                    </div>
+
+                    <!-- Synchronized C++ Code Box -->
+                    <div id="code-box-fast-exp" class="font-mono text-xs leading-relaxed space-y-0.5 overflow-x-auto py-1">
+                        <div id="pe-line-1" class="px-2 py-0.5 rounded text-slate-400 transition-all"><span class="text-purple-400 font-semibold">long long</span> <span class="text-blue-400">powerMod</span>(<span class="text-purple-400 font-semibold">long long</span> a, <span class="text-purple-400 font-semibold">long long</span> b, <span class="text-purple-400 font-semibold">long long</span> m) {</div>
+                        <div id="pe-line-2" class="px-2 py-0.5 rounded text-slate-400 transition-all">&nbsp;&nbsp;<span class="text-purple-400 font-semibold">long long</span> res = <span class="text-amber-300">1</span>; a %= m;</div>
+                        <div id="pe-line-3" class="px-2 py-0.5 rounded text-slate-400 transition-all">&nbsp;&nbsp;<span class="text-purple-400 font-semibold">while</span> (b &gt; <span class="text-amber-300">0</span>) {</div>
+                        <div id="pe-line-4" class="px-2 py-0.5 rounded text-slate-400 transition-all">&nbsp;&nbsp;&nbsp;&nbsp;<span class="text-purple-400 font-semibold">if</span> (b &amp; <span class="text-amber-300">1</span>) { <span class="text-slate-500">// บิตต่ำสุดเป็น 1 (เลขคี่)</span></div>
+                        <div id="pe-line-5" class="px-2 py-0.5 rounded text-slate-400 transition-all">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;res = (__int128)res * a % m;</div>
+                        <div id="pe-line-6" class="px-2 py-0.5 rounded text-slate-400 transition-all">&nbsp;&nbsp;&nbsp;&nbsp;}</div>
+                        <div id="pe-line-7" class="px-2 py-0.5 rounded text-slate-400 transition-all">&nbsp;&nbsp;&nbsp;&nbsp;a = (__int128)a * a % m; <span class="text-slate-500">// ยกกำลังสองฐานเดิม</span></div>
+                        <div id="pe-line-8" class="px-2 py-0.5 rounded text-slate-400 transition-all">&nbsp;&nbsp;&nbsp;&nbsp;b &gt;&gt;= <span class="text-amber-300">1</span>; <span class="text-slate-500">// เลื่อนบิตไปทางขวา (b /= 2)</span></div>
+                        <div id="pe-line-9" class="px-2 py-0.5 rounded text-slate-400 transition-all">&nbsp;&nbsp;}</div>
+                        <div id="pe-line-10" class="px-2 py-0.5 rounded text-slate-400 transition-all">&nbsp;&nbsp;<span class="text-purple-400 font-semibold">return</span> res;</div>
+                        <div id="pe-line-11" class="px-2 py-0.5 rounded text-slate-400 transition-all">}</div>
+                    </div>
+                </div>
+
+                <div class="pt-3 border-t border-slate-800 flex items-center justify-between text-[11px] text-slate-400">
+                    <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded bg-fuchsia-400"></span> ไฮไลต์บรรทัด = คำสั่งระดับบิตปัจจุบัน</span>
+                    <span class="font-mono text-fuchsia-400 font-medium">สอวน. คอมพิวเตอร์ ค่าย 1</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Exportable C++ Source Code Box -->
+        <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl">
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+                <div class="flex items-center gap-2">
+                    <div class="p-1.5 rounded-lg bg-fuchsia-500/20 text-fuchsia-400">
+                        <i data-lucide="code-2" class="w-4 h-4"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-sm font-bold uppercase tracking-wider text-slate-200">
+                            ซอร์สโค้ดภาษา C++ สำหรับการแข่งขัน (Contest Ready)
+                        </h2>
+                        <p class="text-xs text-slate-400">ฟังก์ชัน Fast Modular Exponentiation $O(\log B)$ พร้อมเทคนิค Typecast <code>(__int128)</code> ป้องกัน Overflow 100%</p>
+                    </div>
+                </div>
+                <button id="btn-copy-code" class="bg-fuchsia-600 hover:bg-fuchsia-500 text-white text-xs font-semibold py-1.5 px-3.5 rounded-xl flex items-center gap-1.5 shadow-lg shadow-fuchsia-600/20 transition-all">
+                    <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                    <span id="copy-btn-text">คัดลอกโค้ด C++</span>
+                </button>
+            </div>
+
+            <!-- Code Container Box -->
+            <div class="relative bg-slate-950 border border-slate-800 rounded-xl p-4 font-mono text-xs overflow-x-auto text-slate-300">
+                <pre id="display-code-block" class="whitespace-pre"><code>// กำลังโหลดโค้ด...</code></pre>
+            </div>
+            <div id="copy-toast" class="hidden mt-2.5 text-xs text-fuchsia-400 bg-fuchsia-500/10 border border-fuchsia-500/20 px-3 py-1.5 rounded-lg flex items-center gap-1.5">
+                <i data-lucide="check" class="w-3.5 h-3.5"></i> คัดลอกโค้ดลงคลิปบอร์ดเรียบร้อยแล้ว! สามารถนำไป Paste ใน Grader ได้ทันที
+            </div>
+        </div>
+
+        <!-- Educational Comparison Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4">
+                <h3 class="text-xs font-bold text-fuchsia-300 mb-2 flex items-center gap-1.5">
+                    <i data-lucide="binary" class="w-4 h-4 text-fuchsia-400"></i> ทำไมถึงเป็น O(log B)?
+                </h3>
+                <p class="text-xs text-slate-400 leading-relaxed">
+                    เพราะการเลื่อนบิต <code>b &gt;&gt;= 1</code> คือการหารเลขชี้กำลังด้วย 2 ทุกรอบ จำนวนรอบการทำงานจึงเท่ากับจำนวนบิตของ $B$ หรือ $\lfloor\log_2 B\rfloor + 1$ (สำหรับ $B = 10^{18}$ วนเพียง 60 รอบ)
+                </p>
+            </div>
+
+            <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4">
+                <h3 class="text-xs font-bold text-rose-300 mb-2 flex items-center gap-1.5">
+                    <i data-lucide="shield-alert" class="w-4 h-4 text-rose-400"></i> ทำไมต้องใช้ (__int128)?
+                </h3>
+                <p class="text-xs text-slate-400 leading-relaxed">
+                    หาก $M \approx 10^9$ หรือมากกว่า การคูณ <code>res * a</code> หรือ <code>a * a</code> จะได้ค่าถึง $10^{18}$ หรือมากกว่านั้น ซึ่งเสี่ยงล้นขอบเขตของ <code>long long</code> การ Cast เป็น <code>(__int128)</code> จะป้องกัน Overflow ก่อนการ <code>% m</code> ได้แน่นอน
+                </p>
+            </div>
+
+            <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4">
+                <h3 class="text-xs font-bold text-cyan-300 mb-2 flex items-center gap-1.5">
+                    <i data-lucide="share-2" class="w-4 h-4 text-cyan-400"></i> การนำไปใช้หา Modular Inverse
+                </h3>
+                <p class="text-xs text-slate-400 leading-relaxed">
+                    ตามทฤษฎีบทของแฟร์มาต์ (Fermat's Little Theorem) หาก $M$ เป็นจำนวนเฉพาะ อินเวอร์สการคูณ $A^{-1} \pmod M$ จะมีค่าเท่ากับ <strong>$A^{M-2} \pmod M$</strong> ซึ่งคำนวณผ่านฟังก์ชันนี้ได้ในทันที!
+                </p>
+            </div>
+        </div>
+    </main>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // App State
+        let valA = 3;
+        let valB = 13;
+        let valM = 1000;
+        let steps = [];
+        let currentStepIndex = -1;
+        let isRunning = false;
+        let timer = null;
+        let soundEnabled = true;
+
+        // Tone.js Sound Synthesizer
+        let synth = null;
+        let polySynth = null;
+        function initAudio() {
+            if (!synth && typeof Tone !== 'undefined') {
+                try {
+                    synth = new Tone.Synth({
+                        oscillator: { type: "sine" },
+                        envelope: { attack: 0.005, decay: 0.06, sustain: 0.02, release: 0.05 }
+                    }).toDestination();
+                    synth.volume.value = -12;
+
+                    polySynth = new Tone.PolySynth(Tone.Synth, {
+                        oscillator: { type: "triangle" },
+                        envelope: { attack: 0.01, decay: 0.12, sustain: 0.05, release: 0.15 }
+                    }).toDestination();
+                    polySynth.volume.value = -10;
+                } catch (e) {
+                    console.warn("Audio warning:", e);
+                }
+            }
+        }
+
+        function playSound(type) {
+            if (!soundEnabled) return;
+            try {
+                if (typeof Tone !== 'undefined' && Tone.context && Tone.context.state !== 'running') {
+                    Tone.start();
+                }
+                initAudio();
+                const now = Tone.now();
+                if (type === 'bit_active') {
+                    if (synth) synth.triggerAttackRelease("E4", "0.04", now);
+                } else if (type === 'multiply_res') {
+                    if (polySynth) polySynth.triggerAttackRelease(["C4", "G4"], "0.12", now);
+                } else if (type === 'square_base') {
+                    if (synth) synth.triggerAttackRelease("B4", "0.04", now);
+                } else if (type === 'done') {
+                    if (polySynth) polySynth.triggerAttackRelease(["C4", "E4", "G4", "C5"], "0.35", now);
+                }
+            } catch (e) {}
+        }
+
+        const inputBase = document.getElementById('input-base');
+        const inputExp = document.getElementById('input-exp');
+        const inputMod = document.getElementById('input-mod');
+        const badgeBinaryPreview = document.getElementById('badge-binary-preview');
+        const btnToggleSound = document.getElementById('btn-toggle-sound');
+        const soundIcon = document.getElementById('sound-icon');
+        const soundLabel = document.getElementById('sound-label');
+        const sliderSpeed = document.getElementById('slider-speed');
+        const speedLabel = document.getElementById('speed-label');
+        const btnPlay = document.getElementById('btn-play');
+        const btnStep = document.getElementById('btn-step');
+        const btnReset = document.getElementById('btn-reset');
+
+        const statStep = document.getElementById('stat-step');
+        const labelCurExp = document.getElementById('label-cur-exp');
+        const bitBlocksContainer = document.getElementById('bit-blocks-container');
+        const metricValRes = document.getElementById('metric-val-res');
+        const metricDescRes = document.getElementById('metric-desc-res');
+        const metricValBase = document.getElementById('metric-val-base');
+        const metricDescBase = document.getElementById('metric-desc-base');
+        const metricValExp = document.getElementById('metric-val-exp');
+        const metricDescExp = document.getElementById('metric-desc-exp');
+        const ladderCanvas = document.getElementById('ladder-canvas');
+
+        const mathDisplayExpr = document.getElementById('math-display-expr');
+        const badgeCalcState = document.getElementById('badge-calc-state');
+        const traceTableBody = document.getElementById('trace-table-body');
+
+        const statusTitle = document.getElementById('status-title');
+        const statusDesc = document.getElementById('status-desc');
+        const statusBadge = document.getElementById('status-badge');
+
+        function generateSteps(startA, startB, modM) {
+            const list = [];
+            let a = BigInt(startA) % BigInt(modM);
+            let b = BigInt(startB);
+            const m = BigInt(modM);
+            let res = 1n % m;
+            let round = 0;
+
+            const binaryStr = b.toString(2);
+            const totalBits = binaryStr.length;
+
+            // Step 0: Initial
+            list.push({
+                type: 'init',
+                round: 0,
+                line: 2,
+                a: Number(a),
+                b: Number(b),
+                res: Number(res),
+                bit: null,
+                k: 0,
+                desc: `กำหนดค่าเริ่มต้น: res = 1, a = ${startA} % ${modM} = ${a}, b = ${startB} (${binaryStr}₂)`,
+                tableRow: null
+            });
+
+            let currentK = 0;
+            while (b > 0n) {
+                round++;
+                const bit = Number(b & 1n);
+                const prevA = a;
+                const prevRes = res;
+                const prevB = b;
+
+                // Step 1: Check lowest bit
+                list.push({
+                    type: 'check_bit',
+                    round: round,
+                    line: 4,
+                    a: Number(a),
+                    b: Number(b),
+                    res: Number(res),
+                    bit: bit,
+                    k: currentK,
+                    desc: `รอบที่ #${round}: ตรวจสอบบิตที่ ${currentK} (2^${currentK}): (b & 1) = ${bit} ${bit === 1 ? '-> เป็นเลขคี่ (บิต 1) ต้องคูณสะสมเข้า res' : '-> เป็นเลขคู่ (บิต 0) ไม่ต้องคูณ res'}`
+                });
+
+                // Step 2: Multiply if bit == 1
+                if (bit === 1) {
+                    res = (res * a) % m;
+                    list.push({
+                        type: 'mult_res',
+                        round: round,
+                        line: 5,
+                        a: Number(a),
+                        b: Number(b),
+                        res: Number(res),
+                        bit: bit,
+                        k: currentK,
+                        desc: `บิตเป็น 1: คูณสะสม res = (${prevRes} × ${prevA}) % ${modM} = ${res}`
+                    });
+                }
+
+                // Step 3: Square base
+                a = (a * a) % m;
+                // Step 4: Shift bit
+                b = b >> 1n;
+
+                list.push({
+                    type: 'square_and_shift',
+                    round: round,
+                    line: 7,
+                    a: Number(a),
+                    b: Number(b),
+                    res: Number(res),
+                    bit: bit,
+                    k: currentK,
+                    desc: `ยกระดับฐาน: a = (${prevA}²) % ${modM} = ${a} และเลื่อนบิต b >>= 1 (เหลือ b = ${b})`,
+                    tableRow: {
+                        round: round,
+                        exp: Number(prevB),
+                        bit: bit,
+                        k: currentK,
+                        res: Number(res),
+                        newBase: Number(a)
+                    }
+                });
+
+                currentK++;
+            }
+
+            // Step Final: Complete
+            list.push({
+                type: 'complete',
+                round: round,
+                line: 10,
+                a: Number(a),
+                b: 0,
+                res: Number(res),
+                desc: `คำนวณเสร็จสมบูรณ์! ได้ผลลัพธ์ (${startA}^${startB}) % ${modM} = ${res}`
+            });
+
+            return list;
+        }
+
+        function renderBitBlocks(curStep) {
+            if (!bitBlocksContainer) return;
+            bitBlocksContainer.innerHTML = '';
+
+            const binaryStr = valB.toString(2);
+            const totalBits = binaryStr.length;
+
+            for (let i = 0; i < totalBits; i++) {
+                const bitVal = binaryStr[totalBits - 1 - i]; // bit 0 is at rightmost
+                const k = i;
+                const powerOfTwo = Math.pow(2, k);
+
+                const block = document.createElement('div');
+                block.id = `bit-badge-${k}`;
+                block.className = 'px-2.5 py-1 rounded-lg border text-center transition-all select-none ';
+
+                const isActive = (curStep && curStep.k === k);
+                const isProcessed = (curStep && curStep.k > k);
+
+                if (isActive) {
+                    block.className += 'bg-fuchsia-500/30 border-fuchsia-400 text-fuchsia-200 font-bold scale-105 shadow-md shadow-fuchsia-500/30 ring-1 ring-fuchsia-400';
+                } else if (isProcessed) {
+                    block.className += (bitVal === '1') 
+                        ? 'bg-emerald-950/40 border-emerald-800/60 text-emerald-300/80 opacity-90'
+                        : 'bg-slate-900 border-slate-800 text-slate-500 opacity-60';
+                } else {
+                    block.className += 'bg-slate-900 border-slate-800 text-slate-400';
+                }
+
+                block.innerHTML = `
+                    <div class="text-[9px] text-slate-400 font-mono">2^${k} (${powerOfTwo})</div>
+                    <div class="text-xs font-bold font-mono ${bitVal === '1' ? 'text-amber-300' : 'text-slate-400'}">${bitVal}</div>
+                `;
+                bitBlocksContainer.appendChild(block);
+            }
+        }
+
+        function drawLadder(step) {
+            if (!ladderCanvas) return;
+            const ctx = ladderCanvas.getContext('2d');
+            const W = ladderCanvas.width;
+            const H = ladderCanvas.height;
+            ctx.clearRect(0, 0, W, H);
+
+            const binaryStr = valB.toString(2);
+            const totalBits = Math.max(1, binaryStr.length);
+            const startX = 40;
+            const endX = W - 40;
+            const stepX = Math.min(65, (endX - startX) / Math.max(1, totalBits - 1));
+            const centerY = H / 2 + 10;
+
+            // Draw baseline ladder
+            ctx.strokeStyle = '#334155';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(startX, centerY);
+            ctx.lineTo(startX + (totalBits - 1) * stepX, centerY);
+            ctx.stroke();
+
+            for (let i = 0; i < totalBits; i++) {
+                const x = startX + i * stepX;
+                const bitVal = binaryStr[totalBits - 1 - i];
+                const isCurrent = (step && step.k === i);
+                const isPassed = (step && step.k > i);
+
+                ctx.beginPath();
+                ctx.arc(x, centerY, 14, 0, Math.PI * 2);
+                ctx.fillStyle = '#090d16';
+                ctx.fill();
+
+                if (isCurrent) {
+                    ctx.strokeStyle = '#d946ef'; // fuchsia
+                    ctx.lineWidth = 3;
+                } else if (isPassed) {
+                    ctx.strokeStyle = (bitVal === '1') ? '#10b981' : '#64748b';
+                    ctx.lineWidth = 2;
+                } else {
+                    ctx.strokeStyle = '#334155';
+                    ctx.lineWidth = 1.5;
+                }
+                ctx.stroke();
+
+                // Bit label
+                ctx.fillStyle = isCurrent ? '#fdf4ff' : (bitVal === '1' ? '#f59e0b' : '#94a3b8');
+                ctx.font = 'bold 11px Fira Code, monospace';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(`b${i}`, x, centerY);
+
+                // Label above: 2^i
+                ctx.fillStyle = '#64748b';
+                ctx.font = '10px Prompt, sans-serif';
+                ctx.fillText(`2^${i}`, x, centerY - 24);
+
+                // Label below: Bit 0 or 1
+                ctx.fillStyle = (bitVal === '1') ? '#34d399' : '#64748b';
+                ctx.font = 'bold 10px Fira Code, monospace';
+                ctx.fillText(bitVal === '1' ? '× res' : 'ข้าม', x, centerY + 24);
+            }
+        }
+
+        function highlightCode(line) {
+            for (let i = 1; i <= 11; i++) {
+                const el = document.getElementById(`pe-line-${i}`);
+                if (el) {
+                    if (i === line) el.classList.add('code-highlight');
+                    else el.classList.remove('code-highlight');
+                }
+            }
+        }
+
+        function updateStatus(title, desc, type) {
+            if (statusTitle) statusTitle.textContent = title;
+            if (statusDesc) statusDesc.textContent = desc;
+
+            if (statusBadge) {
+                if (type === 'mult') {
+                    statusBadge.className = 'mt-0.5 p-1.5 rounded-lg bg-emerald-500/20 text-emerald-400 shrink-0';
+                    statusBadge.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i>';
+                } else if (type === 'done') {
+                    statusBadge.className = 'mt-0.5 p-1.5 rounded-lg bg-fuchsia-500/20 text-fuchsia-400 shrink-0';
+                    statusBadge.innerHTML = '<i data-lucide="award" class="w-4 h-4"></i>';
+                } else {
+                    statusBadge.className = 'mt-0.5 p-1.5 rounded-lg bg-cyan-500/20 text-cyan-400 shrink-0';
+                    statusBadge.innerHTML = '<i data-lucide="info" class="w-4 h-4"></i>';
+                }
+            }
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function resetSimulation() {
+            stopAutoPlay();
+            valA = Math.max(0, parseInt(inputBase.value, 10) || 3);
+            valB = Math.max(0, parseInt(inputExp.value, 10) || 13);
+            valM = Math.max(1, parseInt(inputMod.value, 10) || 1000);
+
+            inputBase.value = valA;
+            inputExp.value = valB;
+            inputMod.value = valM;
+
+            const binaryStr = valB.toString(2);
+            if (badgeBinaryPreview) badgeBinaryPreview.textContent = `(${binaryStr})₂`;
+            if (labelCurExp) labelCurExp.textContent = valB;
+
+            steps = generateSteps(valA, valB, valM);
+            currentStepIndex = -1;
+
+            if (statStep) statStep.textContent = `0 / ${steps.length}`;
+            if (metricValRes) metricValRes.textContent = (1 % valM).toString();
+            if (metricDescRes) metricDescRes.textContent = 'เริ่มต้น = 1';
+            if (metricValBase) metricValBase.textContent = (valA % valM).toString();
+            if (metricDescBase) metricDescBase.textContent = `A¹ = ${valA % valM}`;
+            if (metricValExp) metricValExp.textContent = valB.toString();
+            if (metricDescExp) metricDescExp.textContent = `exp >>= 1`;
+
+            if (mathDisplayExpr) mathDisplayExpr.textContent = `${valA}^${valB} mod ${valM} = ...`;
+            if (badgeCalcState) {
+                badgeCalcState.textContent = 'กำลังคำนวณ';
+                badgeCalcState.className = 'text-[10px] font-mono px-2 py-0.5 rounded bg-fuchsia-500/10 text-fuchsia-300 border border-fuchsia-500/20';
+            }
+
+            if (traceTableBody) traceTableBody.innerHTML = '';
+
+            highlightCode(1);
+            updateStatus('พร้อมคำนวณ', `คำนวณ (${valA}^${valB}) % ${valM} ด้วย Binary Exponentiation ในเวลา O(log ${valB})`, 'info');
+            renderBitBlocks(null);
+            drawLadder(null);
+        }
+
+        function stepSimulation() {
+            if (currentStepIndex + 1 >= steps.length) {
+                stopAutoPlay();
+                return;
+            }
+
+            currentStepIndex++;
+            const step = steps[currentStepIndex];
+
+            if (statStep) statStep.textContent = `${currentStepIndex + 1} / ${steps.length}`;
+            highlightCode(step.line);
+
+            if (metricValRes) metricValRes.textContent = step.res;
+            if (metricValBase) metricValBase.textContent = step.a;
+            if (metricValExp) metricValExp.textContent = step.b;
+
+            if (step.k !== undefined && metricDescBase) {
+                metricDescBase.textContent = `ฐาน A^(2^${step.k}) = ${step.a}`;
+            }
+
+            renderBitBlocks(step);
+            drawLadder(step);
+
+            if (step.type === 'check_bit') {
+                playSound('bit_active');
+                updateStatus(`ตรวจบิต: (b & 1) = ${step.bit}`, step.desc, 'info');
+            } else if (step.type === 'mult_res') {
+                playSound('multiply_res');
+                if (metricDescRes) metricDescRes.textContent = `คูณสะสมเข้า res!`;
+                updateStatus(`คูณสะสมเข้า res: res = ${step.res}`, step.desc, 'mult');
+            } else if (step.type === 'square_and_shift') {
+                playSound('square_base');
+                updateStatus(`ยกกำลังสองฐาน: a² % m = ${step.a}`, step.desc, 'info');
+
+                // Add row to trace table
+                if (step.tableRow && traceTableBody) {
+                    const tr = document.createElement('tr');
+                    tr.className = 'border-b border-slate-900 hover:bg-slate-900/60 transition-colors';
+                    tr.innerHTML = `
+                        <td class="py-1 px-1.5 text-slate-400">#${step.tableRow.round}</td>
+                        <td class="py-1 px-1.5 text-fuchsia-300">${step.tableRow.exp}</td>
+                        <td class="py-1 px-1.5 font-bold ${step.tableRow.bit === 1 ? 'text-amber-400' : 'text-slate-500'}">${step.tableRow.bit} (2^${step.tableRow.k})</td>
+                        <td class="py-1 px-1.5 text-emerald-400 font-bold">${step.tableRow.res}</td>
+                        <td class="py-1 px-1.5 text-cyan-300">${step.tableRow.newBase}</td>
+                    `;
+                    traceTableBody.appendChild(tr);
+                }
+            } else if (step.type === 'complete') {
+                playSound('done');
+                if (mathDisplayExpr) mathDisplayExpr.textContent = `${valA}^${valB} mod ${valM} = ${step.res}`;
+                if (badgeCalcState) {
+                    badgeCalcState.textContent = 'สมบูรณ์ ✓';
+                    badgeCalcState.className = 'text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40';
+                }
+                updateStatus(`🎉 คำนวณเสร็จสมบูรณ์! คำตอบคือ ${step.res}`, step.desc, 'done');
+                stopAutoPlay();
+            }
+        }
+
+        function startAutoPlay() {
+            if (currentStepIndex + 1 >= steps.length) {
+                resetSimulation();
+            }
+            isRunning = true;
+            if (btnPlay) {
+                btnPlay.classList.remove('bg-fuchsia-600', 'hover:bg-fuchsia-500');
+                btnPlay.classList.add('bg-rose-600', 'hover:bg-rose-500');
+                btnPlay.innerHTML = '<i data-lucide="pause" class="w-4 h-4"></i> พักจำลอง';
+            }
+            if (window.lucide) lucide.createIcons();
+
+            const spd = sliderSpeed ? parseInt(sliderSpeed.value, 10) : 500;
+            timer = setInterval(() => {
+                stepSimulation();
+            }, spd);
+        }
+
+        function stopAutoPlay() {
+            isRunning = false;
+            if (timer) {
+                clearInterval(timer);
+                timer = null;
+            }
+            if (btnPlay) {
+                btnPlay.classList.remove('bg-rose-600', 'hover:bg-rose-500');
+                btnPlay.classList.add('bg-fuchsia-600', 'hover:bg-fuchsia-500');
+                btnPlay.innerHTML = '<i data-lucide="play" class="w-4 h-4"></i> จำลองอัตโนมัติ';
+            }
+            if (window.lucide) lucide.createIcons();
+        }
+
+        // Presets
+        document.querySelectorAll('.preset-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                inputBase.value = btn.dataset.a;
+                inputExp.value = btn.dataset.b;
+                inputMod.value = btn.dataset.m;
+                resetSimulation();
+            });
+        });
+
+        // Speed Slider
+        sliderSpeed.addEventListener('input', () => {
+            speedLabel.textContent = `${sliderSpeed.value}ms`;
+            if (isRunning) {
+                stopAutoPlay();
+                startAutoPlay();
+            }
+        });
+
+        // Sound Toggle
+        btnToggleSound.addEventListener('click', () => {
+            soundEnabled = !soundEnabled;
+            soundIcon.setAttribute('data-lucide', soundEnabled ? 'volume-2' : 'volume-x');
+            soundLabel.textContent = soundEnabled ? 'เสียง: เปิด' : 'เสียง: ปิด';
+            if (window.lucide) lucide.createIcons();
+        });
+
+        // Playback Buttons
+        btnPlay.addEventListener('click', () => {
+            if (isRunning) stopAutoPlay();
+            else startAutoPlay();
+        });
+        btnStep.addEventListener('click', () => {
+            stopAutoPlay();
+            stepSimulation();
+        });
+        btnReset.addEventListener('click', resetSimulation);
+        inputBase.addEventListener('input', resetSimulation);
+        inputExp.addEventListener('input', resetSimulation);
+        inputMod.addEventListener('input', resetSimulation);
+
+        const snippetTemplate = `#include <iostream>
+
+using namespace std;
+
+// ฟังก์ชัน Fast Modular Exponentiation Time Complexity: O(log B)
+long long powerMod(long long a, long long b, long long m) {
+    long long res = 1;
+    a %= m; // ป้องกัน a เกิน m ตั้งแต่แรก
+
+    while (b > 0) {
+        // หากบิตต่ำสุดเป็น 1 (b เป็นเลขคี่) ให้นำมารวมในคำตอบสะสม
+        if (b & 1) {
+            res = (__int128)res * a % m;
+        }
+
+        // ยกระดับฐานขึ้นเป็นสองเท่าของเลขชี้กำลัง: a = a^2 % m
+        a = (__int128)a * a % m;
+
+        // เลื่อนบิตไปทางขวา 1 หลัก (b = b / 2)
+        b >>= 1;
+    }
+
+    return res;
+}
+
+int main() {
+    // Fast I/O
+    ios_base::sync_with_stdio(false);
+    cin.tie(NULL);
+
+    long long a, b, m;
+    if (cin >> a >> b >> m) {
+        cout << a << "^" << b << " mod " << m << " = " << powerMod(a, b, m) << "\\n";
+    }
+
+    return 0;
+}`;
+
+        const displayCodeBlock = document.getElementById('display-code-block');
+        const btnCopyCode = document.getElementById('btn-copy-code');
+        const copyBtnText = document.getElementById('copy-btn-text');
+        const copyToast = document.getElementById('copy-toast');
+
+        if (displayCodeBlock) displayCodeBlock.textContent = snippetTemplate;
+
+        btnCopyCode.addEventListener('click', () => {
+            const temp = document.createElement('textarea');
+            temp.value = snippetTemplate;
+            temp.style.position = 'fixed';
+            temp.style.left = '-9999px';
+            document.body.appendChild(temp);
+            temp.focus();
+            temp.select();
+            try {
+                document.execCommand('copy');
+                copyBtnText.textContent = 'คัดลอกสำเร็จ!';
+                copyToast.classList.remove('hidden');
+                setTimeout(() => {
+                    copyToast.classList.add('hidden');
+                    copyBtnText.textContent = 'คัดลอกโค้ด C++';
+                }, 2500);
+            } catch (err) {
+                console.error(err);
+            }
+            document.body.removeChild(temp);
+        });
+
+        // Initialize Icons & Simulator State
+        if (window.lucide) lucide.createIcons();
+        resetSimulation();
+    });
+    </script>
+</body>
+</html>

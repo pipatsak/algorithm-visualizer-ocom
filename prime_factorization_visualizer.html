@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prime Factorization Visualizer - ค่าย 1 สอวน. คอมพิวเตอร์</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tone.js for synthesized audio effects -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Google Fonts Prompt & Fira Code -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Prompt', sans-serif; }
+        code, pre, .font-mono { font-family: 'Fira Code', monospace; }
+        .code-highlight {
+            background-color: rgba(14, 165, 233, 0.28) !important;
+            border-left: 4px solid #38bdf8 !important;
+            color: #ffffff !important;
+            font-weight: 600;
+            padding-left: 8px;
+            transition: all 0.15s ease-in-out;
+        }
+        /* Custom scrollbars */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col antialiased selection:bg-cyan-500 selection:text-white">
+
+    <!-- Header Section -->
+    <header class="border-b border-slate-800 bg-slate-900/90 backdrop-blur sticky top-0 z-40 px-4 py-3">
+        <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 via-rose-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-rose-500/20">
+                    <i data-lucide="git-fork" class="w-5 h-5 text-white"></i>
+                </div>
+                <div>
+                    <h1 class="text-base md:text-lg font-bold text-white flex items-center gap-2">
+                        เครื่องมือจำลองการแยกตัวประกอบเฉพาะ (Prime Factorization Visualizer)
+                        <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">O(√N) Trial Division</span>
+                    </h1>
+                    <p class="text-xs text-slate-400">ค่ายโอลิมปิกวิชาการ สอวน. คอมพิวเตอร์ ค่ายที่ 1 — Fundamental Theorem of Arithmetic & Divisors</p>
+                </div>
+            </div>
+
+            <!-- Controls: Sound Toggle -->
+            <div class="flex items-center gap-2 bg-slate-800/90 p-1.5 rounded-xl border border-slate-700">
+                <button id="btn-toggle-sound" title="เปิด/ปิดเสียงเอฟเฟกต์" class="px-2.5 py-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-slate-700/60 transition-all flex items-center gap-1.5 text-xs font-medium">
+                    <i data-lucide="volume-2" id="sound-icon" class="w-4 h-4"></i>
+                    <span id="sound-label">เสียง: เปิด</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 space-y-6">
+        <!-- Input & Control Card -->
+        <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 md:p-5 shadow-xl backdrop-blur-sm">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-end">
+                <!-- Input N -->
+                <div class="lg:col-span-3">
+                    <label class="block text-xs font-medium text-slate-300 mb-1 flex items-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full bg-amber-400"></span> จำนวนเต็มบวก N (2 ถึง 10,000,000):
+                    </label>
+                    <div class="relative">
+                        <input type="number" id="input-n" value="360" min="2" max="10000000" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 font-mono">
+                        <span id="badge-sqrt-val" class="absolute right-3 top-2 text-xs font-mono text-amber-400/80 bg-amber-950/60 px-2 py-0.5 rounded border border-amber-800/40">√N ≈ 18.97</span>
+                    </div>
+                </div>
+
+                <!-- Presets -->
+                <div class="lg:col-span-9 flex flex-wrap items-center justify-start lg:justify-end gap-2">
+                    <span class="text-xs text-slate-400 mr-1 flex items-center gap-1">
+                        <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-400"></i> ตัวอย่างน่าสนใจ:
+                    </span>
+                    <button class="preset-btn bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs px-2.5 py-1.5 rounded-xl transition-all" data-n="60">60 (2²·3·5)</button>
+                    <button class="preset-btn bg-slate-800 hover:bg-slate-700 border border-slate-700 text-amber-300 border-amber-700/50 text-xs px-2.5 py-1.5 rounded-xl transition-all" data-n="360">360 (Highly Composite)</button>
+                    <button class="preset-btn bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs px-2.5 py-1.5 rounded-xl transition-all" data-n="194">194 (2 × 97 prime > √N)</button>
+                    <button class="preset-btn bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs px-2.5 py-1.5 rounded-xl transition-all" data-n="97">97 (Prime)</button>
+                    <button class="preset-btn bg-slate-800 hover:bg-slate-700 border border-slate-700 text-cyan-300 border-cyan-700/40 text-xs px-2.5 py-1.5 rounded-xl transition-all" data-n="2520">2520 (1 ถึง 10 หารลงตัว)</button>
+                    <button class="preset-btn bg-slate-800 hover:bg-slate-700 border border-slate-700 text-rose-300 border-rose-700/40 text-xs px-2.5 py-1.5 rounded-xl transition-all" data-n="1024">1024 (2¹⁰ Power)</button>
+                </div>
+            </div>
+
+            <!-- Playback Controls -->
+            <div class="mt-4 pt-4 border-t border-slate-800 flex flex-wrap items-center justify-between gap-3">
+                <div class="flex items-center gap-3 bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-800">
+                    <span class="text-xs text-slate-400">ความเร็วแอนิเมชัน:</span>
+                    <input type="range" id="slider-speed" min="80" max="1200" step="50" value="450" class="w-28 accent-amber-500 cursor-pointer">
+                    <span id="speed-label" class="text-[11px] font-mono text-amber-400">450ms</span>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <button id="btn-step" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white text-xs font-semibold py-2 px-3.5 rounded-xl flex items-center gap-1.5 transition-all">
+                        <i data-lucide="step-forward" class="w-4 h-4"></i> แยกทีละขั้น (Step)
+                    </button>
+                    <button id="btn-play" class="bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold py-2 px-4 rounded-xl flex items-center gap-1.5 shadow-lg shadow-amber-600/30 transition-all">
+                        <i data-lucide="play" id="icon-play" class="w-4 h-4"></i> จำลองอัตโนมัติ
+                    </button>
+                    <button id="btn-reset" class="bg-slate-800 hover:bg-rose-500/20 hover:text-rose-300 border border-slate-700 text-slate-300 text-xs font-semibold py-2 px-3 rounded-xl flex items-center gap-1.5 transition-all">
+                        <i data-lucide="rotate-ccw" class="w-4 h-4"></i> รีเซ็ต
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Stage Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+            <!-- Left Column: Visualizer Board (7 cols) -->
+            <div class="lg:col-span-7 bg-slate-900/90 border border-slate-800 rounded-2xl p-5 md:p-6 shadow-xl flex flex-col justify-between space-y-5">
+                <div>
+                    <!-- Visualizer Title Strip -->
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+                        <div>
+                            <h2 class="text-sm font-bold uppercase tracking-wider text-slate-200 flex items-center gap-2">
+                                <span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
+                                แผนภาพแผนภูมิต้นไม้ตัวประกอบ (Factor Tree Canvas)
+                            </h2>
+                            <p class="text-xs text-slate-400 mt-0.5">การดึงตัวประกอบเฉพาะ $p$ ออกมาทีละตัว และลดทอนค่า $n \leftarrow n / p$ ต่อเนื่อง</p>
+                        </div>
+                        <div class="flex items-center gap-2 text-xs bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-800 font-mono">
+                            <span class="text-slate-400">ขั้นตอนที่: <strong id="stat-step" class="text-amber-400 text-sm">0 / 0</strong></span>
+                        </div>
+                    </div>
+
+                    <!-- Value Reduction Progression Bar -->
+                    <div class="bg-slate-950 border border-slate-800/90 rounded-xl p-3.5 mb-4">
+                        <div class="flex items-center justify-between text-xs mb-1.5">
+                            <span class="text-slate-400 flex items-center gap-1.5">
+                                <i data-lucide="activity" class="w-3.5 h-3.5 text-amber-400"></i> ค่าของ n ปัจจุบัน:
+                                <strong id="label-cur-n" class="text-white font-mono text-sm ml-1">360</strong>
+                            </span>
+                            <span class="text-slate-400 font-mono text-[11px]">
+                                ตัวหารทดสอบ d: <strong id="label-cur-d" class="text-cyan-400">-</strong> 
+                                (<span id="label-d-cond">d² &le; n</span>)
+                            </span>
+                        </div>
+                        <!-- Progress Visual Track -->
+                        <div class="w-full bg-slate-900 rounded-full h-2.5 overflow-hidden border border-slate-800">
+                            <div id="progression-bar" class="bg-gradient-to-r from-amber-500 via-rose-500 to-emerald-400 h-full w-full transition-all duration-300"></div>
+                        </div>
+                    </div>
+
+                    <!-- Factor Tree Canvas -->
+                    <div class="bg-slate-950 rounded-xl border border-slate-800/90 p-3 relative overflow-hidden flex flex-col items-center justify-center min-h-[220px]">
+                        <canvas id="factor-tree-canvas" width="600" height="220" class="max-w-full rounded-lg"></canvas>
+                    </div>
+                </div>
+
+                <div>
+                    <!-- Mathematical Expression Box -->
+                    <div class="bg-slate-950 p-3.5 rounded-xl border border-slate-800 mb-3">
+                        <div class="flex items-center justify-between text-xs text-slate-400 mb-1.5">
+                            <span class="font-semibold text-slate-300 flex items-center gap-1.5">
+                                <i data-lucide="calculator" class="w-3.5 h-3.5 text-amber-400"></i> รูปแบบผลคูณตัวประกอบเฉพาะ (Canonical Prime Factorization):
+                            </span>
+                            <span id="badge-prime-state" class="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20">กำลังคำนวณ</span>
+                        </div>
+                        <div id="math-canonical-expr" class="text-base sm:text-lg font-mono font-bold text-amber-300 tracking-wide text-center py-1">
+                            <!-- e.g. 360 = 2³ × 3² × 5¹ -->
+                            360 = ...
+                        </div>
+                    </div>
+
+                    <!-- Step Notification Banner -->
+                    <div id="status-banner" class="p-3.5 rounded-xl bg-slate-950 border border-slate-800 flex items-start gap-3 transition-all">
+                        <div id="status-badge" class="mt-0.5 p-1.5 rounded-lg bg-amber-500/20 text-amber-400 shrink-0">
+                            <i data-lucide="info" class="w-4 h-4"></i>
+                        </div>
+                        <div class="flex-1">
+                            <h3 id="status-title" class="text-xs font-bold text-slate-200 mb-0.5">สถานะการทำงาน</h3>
+                            <p id="status-desc" class="text-xs text-slate-400 leading-relaxed">กดปุ่ม "จำลองอัตโนมัติ" หรือ "แยกทีละขั้น (Step)" เพื่อเริ่มต้นการแยกตัวประกอบ</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Number-Theoretic Applications & Synchronized Code (5 cols) -->
+            <div class="lg:col-span-5 bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col justify-between space-y-4">
+                <div>
+                    <!-- Top Metric Cards Grid: Divisors & Arithmetic Functions -->
+                    <div class="border-b border-slate-800 pb-3 mb-3">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+                                <i data-lucide="database" class="w-3.5 h-3.5 text-cyan-400"></i>
+                                สมบัติทางทฤษฎีจำนวน (Number Theoretic Functions)
+                            </span>
+                        </div>
+                        <div class="grid grid-cols-3 gap-2">
+                            <!-- Number of Divisors: sigma_0 -->
+                            <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800 text-center">
+                                <span class="text-[10px] text-slate-400 block font-medium">จำนวนตัวหาร (σ₀)</span>
+                                <span id="metric-divisors-count" class="text-base font-bold font-mono text-emerald-400 mt-0.5 block">-</span>
+                                <span class="text-[9px] text-slate-500 font-mono block">∏(aᵢ + 1)</span>
+                            </div>
+                            <!-- Sum of Divisors: sigma_1 -->
+                            <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800 text-center">
+                                <span class="text-[10px] text-slate-400 block font-medium">ผลบวกตัวหาร (σ₁)</span>
+                                <span id="metric-divisors-sum" class="text-base font-bold font-mono text-cyan-400 mt-0.5 block">-</span>
+                                <span class="text-[9px] text-slate-500 font-mono block">ผลรวมทุกตัวหาร</span>
+                            </div>
+                            <!-- Euler Totient: phi(n) -->
+                            <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800 text-center">
+                                <span class="text-[10px] text-slate-400 block font-medium">ออยเลอร์โทเชียนต์ (φ)</span>
+                                <span id="metric-euler-phi" class="text-base font-bold font-mono text-indigo-300 mt-0.5 block">-</span>
+                                <span class="text-[9px] text-slate-500 font-mono block">n ∏(1 - 1/p)</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Code Header Strip -->
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-2 mb-2">
+                        <div class="flex items-center gap-2">
+                            <div class="flex gap-1.5">
+                                <span class="w-3 h-3 rounded-full bg-rose-500/80 inline-block"></span>
+                                <span class="w-3 h-3 rounded-full bg-amber-500/80 inline-block"></span>
+                                <span class="w-3 h-3 rounded-full bg-emerald-500/80 inline-block"></span>
+                            </div>
+                            <span class="text-xs font-mono text-slate-400 font-semibold ml-2">prime_factorize.cpp</span>
+                        </div>
+                        <span class="text-[11px] font-mono px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20">Trial Division O(√N)</span>
+                    </div>
+
+                    <!-- Synchronized C++ Code Box -->
+                    <div id="code-box-factor" class="font-mono text-xs leading-relaxed space-y-0.5 overflow-x-auto py-1">
+                        <div id="f-line-1" class="px-2 py-0.5 rounded text-slate-400 transition-all"><span class="text-purple-400 font-semibold">vector</span>&lt;<span class="text-purple-400 font-semibold">pair</span>&lt;<span class="text-purple-400 font-semibold">long long</span>, <span class="text-purple-400 font-semibold">int</span>&gt;&gt; <span class="text-blue-400">factorize</span>(<span class="text-purple-400 font-semibold">long long</span> n) {</div>
+                        <div id="f-line-2" class="px-2 py-0.5 rounded text-slate-400 transition-all">&nbsp;&nbsp;<span class="text-purple-400 font-semibold">vector</span>&lt;<span class="text-purple-400 font-semibold">pair</span>&lt;<span class="text-purple-400 font-semibold">long long</span>, <span class="text-purple-400 font-semibold">int</span>&gt;&gt; factors;</div>
+                        <div id="f-line-3" class="px-2 py-0.5 rounded text-slate-400 transition-all">&nbsp;&nbsp;<span class="text-purple-400 font-semibold">if</span> (n % <span class="text-amber-300">2</span> == <span class="text-amber-300">0</span>) { <span class="text-slate-500">// จัดการเลขคู่ (2)</span></div>
+                        <div id="f-line-4" class="px-2 py-0.5 rounded text-slate-400 transition-all">&nbsp;&nbsp;&nbsp;&nbsp;<span class="text-purple-400 font-semibold">int</span> cnt = <span class="text-amber-300">0</span>;</div>
+                        <div id="f-line-5" class="px-2 py-0.5 rounded text-slate-400 transition-all">&nbsp;&nbsp;&nbsp;&nbsp;<span class="text-purple-400 font-semibold">while</span> (n % <span class="text-amber-300">2</span> == <span class="text-amber-300">0</span>) { cnt++; n /= <span class="text-amber-300">2</span>; }</div>
+                        <div id="f-line-6" class="px-2 py-0.5 rounded text-slate-400 transition-all">&nbsp;&nbsp;&nbsp;&nbsp;factors.<span class="text-blue-400">push_back</span>({<span class="text-amber-300">2</span>, cnt});</div>
+                        <div id="f-line-7" class="px-2 py-0.5 rounded text-slate-400 transition-all">&nbsp;&nbsp;}</div>
+                        <div id="f-line-8" class="px-2 py-0.5 rounded text-slate-400 transition-all">&nbsp;&nbsp;<span class="text-purple-400 font-semibold">for</span> (<span class="text-purple-400 font-semibold">long long</span> d = <span class="text-amber-300">3</span>; d * d &lt;= n; d += <span class="text-amber-300">2</span>) {</div>
+                        <div id="f-line-9" class="px-2 py-0.5 rounded text-slate-400 transition-all">&nbsp;&nbsp;&nbsp;&nbsp;<span class="text-purple-400 font-semibold">if</span> (n % d == <span class="text-amber-300">0</span>) { <span class="text-slate-500">// พบตัวประกอบคี่</span></div>
+                        <div id="f-line-10" class="px-2 py-0.5 rounded text-slate-400 transition-all">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="text-purple-400 font-semibold">int</span> cnt = <span class="text-amber-300">0</span>;</div>
+                        <div id="f-line-11" class="px-2 py-0.5 rounded text-slate-400 transition-all">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="text-purple-400 font-semibold">while</span> (n % d == <span class="text-amber-300">0</span>) { cnt++; n /= d; }</div>
+                        <div id="f-line-12" class="px-2 py-0.5 rounded text-slate-400 transition-all">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;factors.<span class="text-blue-400">push_back</span>({d, cnt});</div>
+                        <div id="f-line-13" class="px-2 py-0.5 rounded text-slate-400 transition-all">&nbsp;&nbsp;&nbsp;&nbsp;}</div>
+                        <div id="f-line-14" class="px-2 py-0.5 rounded text-slate-400 transition-all">&nbsp;&nbsp;}</div>
+                        <div id="f-line-15" class="px-2 py-0.5 rounded text-slate-400 transition-all">&nbsp;&nbsp;<span class="text-purple-400 font-semibold">if</span> (n &gt; <span class="text-amber-300">1</span>) factors.<span class="text-blue-400">push_back</span>({n, <span class="text-amber-300">1</span>}); <span class="text-slate-500">// ตัวประกอบสุดท้าย &gt; √n</span></div>
+                        <div id="f-line-16" class="px-2 py-0.5 rounded text-slate-400 transition-all">&nbsp;&nbsp;<span class="text-purple-400 font-semibold">return</span> factors;</div>
+                        <div id="f-line-17" class="px-2 py-0.5 rounded text-slate-400 transition-all">}</div>
+                    </div>
+                </div>
+
+                <div class="pt-3 border-t border-slate-800 flex items-center justify-between text-[11px] text-slate-400">
+                    <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded bg-amber-400"></span> ไฮไลต์บรรทัด = การหารทอนค่าปัจจุบัน</span>
+                    <span class="font-mono text-amber-400 font-medium">สอวน. คอมพิวเตอร์ ค่าย 1</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Exportable C++ Source Code Box -->
+        <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl">
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+                <div class="flex items-center gap-2">
+                    <div class="p-1.5 rounded-lg bg-amber-500/20 text-amber-400">
+                        <i data-lucide="code-2" class="w-4 h-4"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-sm font-bold uppercase tracking-wider text-slate-200">
+                            ซอร์สโค้ดภาษา C++ สำหรับการแข่งขันโอลิมปิก (Contest Ready)
+                        </h2>
+                        <p class="text-xs text-slate-400">พร้อมฟังก์ชันคำนวณจำนวนตัวหาร $\sigma_0(n)$ และผลบวกตัวหาร $\sigma_1(n)$ อัตโนมัติ</p>
+                    </div>
+                </div>
+                <button id="btn-copy-code" class="bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold py-1.5 px-3.5 rounded-xl flex items-center gap-1.5 shadow-lg shadow-amber-600/20 transition-all">
+                    <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                    <span id="copy-btn-text">คัดลอกโค้ด C++</span>
+                </button>
+            </div>
+
+            <!-- Code Container Box -->
+            <div class="relative bg-slate-950 border border-slate-800 rounded-xl p-4 font-mono text-xs overflow-x-auto text-slate-300">
+                <pre id="display-code-block" class="whitespace-pre"><code>// กำลังโหลดโค้ด...</code></pre>
+            </div>
+            <div id="copy-toast" class="hidden mt-2.5 text-xs text-amber-400 bg-amber-500/10 border border-amber-500/20 px-3 py-1.5 rounded-lg flex items-center gap-1.5">
+                <i data-lucide="check" class="w-3.5 h-3.5"></i> คัดลอกโค้ดลงคลิปบอร์ดเรียบร้อยแล้ว! สามารถนำไป Paste ใน Grader ได้ทันที
+            </div>
+        </div>
+
+        <!-- Educational Comparison Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4">
+                <h3 class="text-xs font-bold text-amber-300 mb-2 flex items-center gap-1.5">
+                    <i data-lucide="help-circle" class="w-4 h-4 text-amber-400"></i> ทำไมลูปข้ามเลขประกอบได้?
+                </h3>
+                <p class="text-xs text-slate-400 leading-relaxed">
+                    แม้ลูปจะเพิ่ม $d \mathrel{+}= 2$ ผ่านเลขประกอบ เช่น $9, 15$ แต่มันจะ<strong>หาร $n$ ไม่ลงตัวแน่นอน</strong> เพราะตัวประกอบเฉพาะของมัน (เช่น 3) ถูกหารทอนออกจนหมดเกลี้ยงในรอบก่อนหน้าแล้ว
+                </p>
+            </div>
+
+            <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4">
+                <h3 class="text-xs font-bold text-rose-300 mb-2 flex items-center gap-1.5">
+                    <i data-lucide="alert-triangle" class="w-4 h-4 text-rose-400"></i> ทำไมต้องมี if (n &gt; 1)?
+                </h3>
+                <p class="text-xs text-slate-400 leading-relaxed">
+                    หาก $n$ มีตัวประกอบเฉพาะที่<strong>มากกว่า $\sqrt{n}$</strong> (เช่น $46 = 2 \times 23$) ลูปจะหยุดที่ $d \le \sqrt{46} \approx 6$ ทำให้เหลือค่า $n = 23$ ตกค้าง จึงต้องเก็บตกด้วย <code>if (n &gt; 1)</code> เสมอ
+                </p>
+            </div>
+
+            <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4">
+                <h3 class="text-xs font-bold text-cyan-300 mb-2 flex items-center gap-1.5">
+                    <i data-lucide="zap" class="w-4 h-4 text-cyan-400"></i> เทคนิค SPF สำหรับหลายคำถาม
+                </h3>
+                <p class="text-xs text-slate-400 leading-relaxed">
+                    หากโจทย์มี $Q = 10^5$ คำถาม ให้ใช้ Sieve สร้างตาราง <code>spf[x]</code> (Smallest Prime Factor) ไว้ก่อน จะช่วยให้แยกตัวประกอบแต่ละคำถามได้เร็วในเวลา <strong>$O(\log N)$</strong> แทน $O(\sqrt{N})$
+                </p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Script Logic -->
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // App State
+        let initialN = 360;
+        let steps = [];
+        let currentStepIndex = -1;
+        let isRunning = false;
+        let timer = null;
+        let soundEnabled = true;
+
+        // Tone.js Sound Synthesizer
+        let synth = null;
+        let polySynth = null;
+        function initAudio() {
+            if (!synth && typeof Tone !== 'undefined') {
+                try {
+                    synth = new Tone.Synth({
+                        oscillator: { type: "sine" },
+                        envelope: { attack: 0.005, decay: 0.05, sustain: 0.01, release: 0.05 }
+                    }).toDestination();
+                    synth.volume.value = -12;
+
+                    polySynth = new Tone.PolySynth(Tone.Synth, {
+                        oscillator: { type: "triangle" },
+                        envelope: { attack: 0.01, decay: 0.12, sustain: 0.05, release: 0.15 }
+                    }).toDestination();
+                    polySynth.volume.value = -10;
+                } catch (e) {
+                    console.warn("Audio warning:", e);
+                }
+            }
+        }
+
+        function playSound(type) {
+            if (!soundEnabled) return;
+            try {
+                if (typeof Tone !== 'undefined' && Tone.context && Tone.context.state !== 'running') {
+                    Tone.start();
+                }
+                initAudio();
+                const now = Tone.now();
+                if (type === 'divide') {
+                    if (synth) synth.triggerAttackRelease("E4", "0.04", now);
+                } else if (type === 'factor_complete') {
+                    if (polySynth) polySynth.triggerAttackRelease(["C4", "G4", "C5"], "0.15", now);
+                } else if (type === 'done') {
+                    if (polySynth) polySynth.triggerAttackRelease(["C4", "E4", "G4", "C5"], "0.35", now);
+                }
+            } catch (e) {}
+        }
+
+        // DOM Elements
+        const inputN = document.getElementById('input-n');
+        const badgeSqrtVal = document.getElementById('badge-sqrt-val');
+        const btnToggleSound = document.getElementById('btn-toggle-sound');
+        const soundIcon = document.getElementById('sound-icon');
+        const soundLabel = document.getElementById('sound-label');
+        const sliderSpeed = document.getElementById('slider-speed');
+        const speedLabel = document.getElementById('speed-label');
+        const btnPlay = document.getElementById('btn-play');
+        const btnStep = document.getElementById('btn-step');
+        const btnReset = document.getElementById('btn-reset');
+
+        const statStep = document.getElementById('stat-step');
+        const labelCurN = document.getElementById('label-cur-n');
+        const labelCurD = document.getElementById('label-cur-d');
+        const labelDCond = document.getElementById('label-d-cond');
+        const progressionBar = document.getElementById('progression-bar');
+        const factorTreeCanvas = document.getElementById('factor-tree-canvas');
+
+        const mathCanonicalExpr = document.getElementById('math-canonical-expr');
+        const badgePrimeState = document.getElementById('badge-prime-state');
+
+        const metricDivisorsCount = document.getElementById('metric-divisors-count');
+        const metricDivisorsSum = document.getElementById('metric-divisors-sum');
+        const metricEulerPhi = document.getElementById('metric-euler-phi');
+
+        const statusTitle = document.getElementById('status-title');
+        const statusDesc = document.getElementById('status-desc');
+        const statusBadge = document.getElementById('status-badge');
+
+        // Step Generator
+        function generateSteps(startN) {
+            const list = [];
+            let n = startN;
+            const treeNodes = [{ val: n, isPrime: false, level: 0, x: 0.5, y: 0.15 }];
+            const accumulatedFactors = []; // array of {p, count}
+
+            // Step 0: Start
+            list.push({
+                type: 'start',
+                n: n,
+                d: 2,
+                line: 1,
+                desc: `เริ่มต้นกระบวนการแยกตัวประกอบสำหรับ N = ${startN}`,
+                factors: [],
+                tree: JSON.parse(JSON.stringify(treeNodes))
+            });
+
+            // Check factor 2
+            if (n % 2 === 0) {
+                let cnt = 0;
+                list.push({
+                    type: 'found_even',
+                    n: n,
+                    d: 2,
+                    line: 3,
+                    desc: `${n} หารด้วย 2 ลงตัว (เป็นเลขคู่) เริ่มหารทอนด้วย 2 ซ้ำ ๆ`,
+                    factors: JSON.parse(JSON.stringify(accumulatedFactors)),
+                    tree: JSON.parse(JSON.stringify(treeNodes))
+                });
+
+                while (n % 2 === 0) {
+                    cnt++;
+                    const prevN = n;
+                    n = Math.floor(n / 2);
+                    treeNodes.push({ prime: 2, remaining: n, level: cnt });
+
+                    list.push({
+                        type: 'divide_step',
+                        d: 2,
+                        prevN: prevN,
+                        n: n,
+                        cnt: cnt,
+                        line: 5,
+                        desc: `หารด้วย 2: ${prevN} ÷ 2 = ${n}`,
+                        factors: [{ p: 2, count: cnt }],
+                        tree: JSON.parse(JSON.stringify(treeNodes))
+                    });
+                }
+                accumulatedFactors.push({ p: 2, count: cnt });
+            }
+
+            // Loop odd divisors starting from 3
+            for (let d = 3; d * d <= n; d += 2) {
+                list.push({
+                    type: 'check_divisor',
+                    n: n,
+                    d: d,
+                    line: 8,
+                    desc: `ทดสอบตัวหาร d = ${d} (เนื่องจาก d² = ${d * d} ≤ ${n})`,
+                    factors: JSON.parse(JSON.stringify(accumulatedFactors)),
+                    tree: JSON.parse(JSON.stringify(treeNodes))
+                });
+
+                if (n % d === 0) {
+                    let cnt = 0;
+                    list.push({
+                        type: 'found_odd',
+                        n: n,
+                        d: d,
+                        line: 9,
+                        desc: `พบตัวประกอบเฉพาะ d = ${d}! เริ่มหารทอนค่า n`,
+                        factors: JSON.parse(JSON.stringify(accumulatedFactors)),
+                        tree: JSON.parse(JSON.stringify(treeNodes))
+                    });
+
+                    while (n % d === 0) {
+                        cnt++;
+                        const prevN = n;
+                        n = Math.floor(n / d);
+                        treeNodes.push({ prime: d, remaining: n });
+
+                        const currentFactors = JSON.parse(JSON.stringify(accumulatedFactors));
+                        currentFactors.push({ p: d, count: cnt });
+
+                        list.push({
+                            type: 'divide_step',
+                            d: d,
+                            prevN: prevN,
+                            n: n,
+                            cnt: cnt,
+                            line: 11,
+                            desc: `หารด้วย ${d}: ${prevN} ÷ ${d} = ${n}`,
+                            factors: currentFactors,
+                            tree: JSON.parse(JSON.stringify(treeNodes))
+                        });
+                    }
+                    accumulatedFactors.push({ p: d, count: cnt });
+                }
+            }
+
+            // Remaining prime > sqrt(n)
+            if (n > 1) {
+                treeNodes.push({ prime: n, remaining: 1, isFinalLargePrime: true });
+                accumulatedFactors.push({ p: n, count: 1 });
+
+                list.push({
+                    type: 'remaining_prime',
+                    n: n,
+                    d: n,
+                    line: 15,
+                    desc: `เศษที่เหลือ n = ${n} มีค่า > 1 และเกิน ⌊√N⌋ จึงเป็นจำนวนเฉพาะตัวสุดท้าย!`,
+                    factors: JSON.parse(JSON.stringify(accumulatedFactors)),
+                    tree: JSON.parse(JSON.stringify(treeNodes))
+                });
+            }
+
+            // Final step: Summary
+            list.push({
+                type: 'complete',
+                n: 1,
+                d: null,
+                line: 16,
+                desc: `การแยกตัวประกอบเสร็จสมบูรณ์! ได้รูปแบบบัญญัติ (Canonical Form) เรียบร้อย`,
+                factors: JSON.parse(JSON.stringify(accumulatedFactors)),
+                tree: JSON.parse(JSON.stringify(treeNodes))
+            });
+
+            return list;
+        }
+
+        // Draw Factor Tree on HTML Canvas
+        function drawFactorTree(step) {
+            if (!factorTreeCanvas) return;
+            const ctx = factorTreeCanvas.getContext('2d');
+            const W = factorTreeCanvas.width;
+            const H = factorTreeCanvas.height;
+            ctx.clearRect(0, 0, W, H);
+
+            if (!step || !step.tree || step.tree.length === 0) return;
+
+            // Extract sequence of prime divisions
+            const divisions = [];
+            let currentRemaining = initialN;
+
+            for (let i = 1; i < step.tree.length; i++) {
+                if (step.tree[i].prime) {
+                    divisions.push({
+                        from: currentRemaining,
+                        prime: step.tree[i].prime,
+                        to: step.tree[i].remaining
+                    });
+                    currentRemaining = step.tree[i].remaining;
+                }
+            }
+
+            if (divisions.length === 0) {
+                // Just draw the root node
+                drawNode(ctx, W / 2, H / 2, initialN, '#f59e0b', true);
+                return;
+            }
+
+            // Draw sequence as branching chain
+            const totalNodes = divisions.length + 1;
+            const startX = 50;
+            const endX = W - 60;
+            const stepX = Math.min(80, (endX - startX) / Math.max(1, totalNodes - 1));
+            const centerY = H / 2 - 15;
+
+            let curX = startX;
+            drawNode(ctx, curX, centerY, initialN, '#94a3b8', false);
+
+            for (let i = 0; i < divisions.length; i++) {
+                const item = divisions[i];
+                const nextX = curX + stepX;
+
+                // Branch up to Prime leaf
+                const primeX = curX + stepX * 0.45;
+                const primeY = centerY - 50;
+
+                ctx.strokeStyle = '#475569';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(curX, centerY);
+                ctx.lineTo(primeX, primeY);
+                ctx.stroke();
+
+                // Branch to next remaining
+                ctx.beginPath();
+                ctx.moveTo(curX, centerY);
+                ctx.lineTo(nextX, centerY);
+                ctx.stroke();
+
+                // Prime Node (Golden Emerald)
+                drawNode(ctx, primeX, primeY, item.prime, '#10b981', true);
+
+                // Next Node
+                const isLast = (i === divisions.length - 1);
+                const isCompleteOne = (item.to === 1);
+                drawNode(ctx, nextX, centerY, item.to, isCompleteOne ? '#38bdf8' : (isLast ? '#f59e0b' : '#94a3b8'), false);
+
+                curX = nextX;
+            }
+        }
+
+        function drawNode(ctx, x, y, label, color, isPrime) {
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(x, y, isPrime ? 18 : 20, 0, Math.PI * 2);
+            ctx.fillStyle = '#090d16';
+            ctx.fill();
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = color;
+            ctx.stroke();
+
+            ctx.fillStyle = color;
+            ctx.font = 'bold 12px Fira Code, monospace';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(label, x, y);
+            ctx.restore();
+        }
+
+        function highlightCode(line) {
+            for (let i = 1; i <= 17; i++) {
+                const el = document.getElementById(`f-line-${i}`);
+                if (el) {
+                    if (i === line) el.classList.add('code-highlight');
+                    else el.classList.remove('code-highlight');
+                }
+            }
+        }
+
+        function updateStatus(title, desc, type) {
+            if (statusTitle) statusTitle.textContent = title;
+            if (statusDesc) statusDesc.textContent = desc;
+
+            if (statusBadge) {
+                if (type === 'divide') {
+                    statusBadge.className = 'mt-0.5 p-1.5 rounded-lg bg-amber-500/20 text-amber-400 shrink-0';
+                    statusBadge.innerHTML = '<i data-lucide="git-branch" class="w-4 h-4"></i>';
+                } else if (type === 'done') {
+                    statusBadge.className = 'mt-0.5 p-1.5 rounded-lg bg-emerald-500/20 text-emerald-400 shrink-0';
+                    statusBadge.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i>';
+                } else {
+                    statusBadge.className = 'mt-0.5 p-1.5 rounded-lg bg-cyan-500/20 text-cyan-400 shrink-0';
+                    statusBadge.innerHTML = '<i data-lucide="info" class="w-4 h-4"></i>';
+                }
+            }
+            if (window.lucide) lucide.createIcons();
+        }
+
+        // Calculate Arithmetic Functions from Factors
+        function updateArithmeticMetrics(factors) {
+            if (!factors || factors.length === 0) {
+                metricDivisorsCount.textContent = '-';
+                metricDivisorsSum.textContent = '-';
+                metricEulerPhi.textContent = '-';
+                mathCanonicalExpr.textContent = `${initialN} = ...`;
+                return;
+            }
+
+            // Canonical representation: N = p1^a1 * p2^a2 ...
+            const terms = factors.map(f => `${f.p}${f.count > 1 ? `<sup>${f.count}</sup>` : ''}`);
+            mathCanonicalExpr.innerHTML = `${initialN} = ${terms.join(' &times; ')}`;
+
+            // 1. Number of Divisors: sigma_0(n) = prod(a_i + 1)
+            let sigma0 = 1;
+            // 2. Sum of Divisors: sigma_1(n) = prod((p^(a+1) - 1) / (p - 1))
+            let sigma1 = 1;
+            // 3. Euler's Totient: phi(n) = n * prod(1 - 1/p)
+            let phi = initialN;
+
+            for (const f of factors) {
+                sigma0 *= (f.count + 1);
+
+                let sumP = 0;
+                let curPower = 1;
+                for (let k = 0; k <= f.count; k++) {
+                    sumP += curPower;
+                    curPower *= f.p;
+                }
+                sigma1 *= sumP;
+
+                phi = Math.floor(phi * (f.p - 1) / f.p);
+            }
+
+            metricDivisorsCount.textContent = `${sigma0} ตัว`;
+            metricDivisorsSum.textContent = sigma1.toLocaleString();
+            metricEulerPhi.textContent = phi.toLocaleString();
+        }
+
+        function resetSimulation() {
+            stopAutoPlay();
+            initialN = Math.min(10000000, Math.max(2, parseInt(inputN.value, 10) || 360));
+            inputN.value = initialN;
+            const sqrtVal = Math.sqrt(initialN);
+            if (badgeSqrtVal) badgeSqrtVal.textContent = `√N ≈ ${sqrtVal.toFixed(2)}`;
+
+            steps = generateSteps(initialN);
+            currentStepIndex = -1;
+
+            if (statStep) statStep.textContent = `0 / ${steps.length}`;
+            if (labelCurN) labelCurN.textContent = initialN;
+            if (labelCurD) labelCurD.textContent = '-';
+            if (labelDCond) labelDCond.textContent = `d² ≤ ${initialN}`;
+            if (progressionBar) progressionBar.style.width = '100%';
+            if (badgePrimeState) badgePrimeState.textContent = 'กำลังคำนวณ';
+
+            highlightCode(1);
+            updateStatus('พร้อมแยกตัวประกอบ', `กำหนด n = ${initialN} เริ่มตรวจสอบตัวประกอบตั้งแต่ d = 2 ถึง ⌊√${initialN}⌋ = ${Math.floor(sqrtVal)}`, 'info');
+            updateArithmeticMetrics([]);
+            drawFactorTree(null);
+        }
+
+        function stepSimulation() {
+            if (currentStepIndex + 1 >= steps.length) {
+                stopAutoPlay();
+                return;
+            }
+
+            currentStepIndex++;
+            const step = steps[currentStepIndex];
+
+            if (statStep) statStep.textContent = `${currentStepIndex + 1} / ${steps.length}`;
+            highlightCode(step.line);
+
+            if (step.d) {
+                if (labelCurD) labelCurD.textContent = step.d;
+                if (labelDCond) labelDCond.textContent = `${step.d}²=${step.d * step.d} ≤ ${step.n}`;
+            }
+            if (labelCurN) labelCurN.textContent = step.n;
+
+            // Update remaining progress bar
+            if (progressionBar) {
+                const ratio = Math.max(5, (step.n / initialN) * 100);
+                progressionBar.style.width = `${ratio}%`;
+            }
+
+            updateArithmeticMetrics(step.factors);
+            drawFactorTree(step);
+
+            if (step.type === 'divide_step') {
+                playSound('divide');
+                updateStatus(`หารทอนค่า: ${step.prevN} ÷ ${step.d} = ${step.n}`, step.desc, 'divide');
+            } else if (step.type === 'remaining_prime') {
+                playSound('factor_complete');
+                updateStatus(`พบจำนวนเฉพาะตัวสุดท้าย: ${step.n}`, step.desc, 'divide');
+            } else if (step.type === 'complete') {
+                playSound('done');
+                if (progressionBar) progressionBar.style.width = '0%';
+                if (badgePrimeState) {
+                    badgePrimeState.textContent = 'สมบูรณ์ ✓';
+                    badgePrimeState.className = 'text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40';
+                }
+                updateStatus(`🎉 การแยกตัวประกอบเสร็จสมบูรณ์!`, step.desc, 'done');
+                stopAutoPlay();
+            } else {
+                updateStatus(`กำลังประมวลผล`, step.desc, 'info');
+            }
+        }
+
+        function startAutoPlay() {
+            if (currentStepIndex + 1 >= steps.length) {
+                resetSimulation();
+            }
+            isRunning = true;
+            if (btnPlay) {
+                btnPlay.classList.remove('bg-amber-600', 'hover:bg-amber-500');
+                btnPlay.classList.add('bg-rose-600', 'hover:bg-rose-500');
+                btnPlay.innerHTML = '<i data-lucide="pause" class="w-4 h-4"></i> พักจำลอง';
+            }
+            if (window.lucide) lucide.createIcons();
+
+            const spd = sliderSpeed ? parseInt(sliderSpeed.value, 10) : 450;
+            timer = setInterval(() => {
+                stepSimulation();
+            }, spd);
+        }
+
+        function stopAutoPlay() {
+            isRunning = false;
+            if (timer) {
+                clearInterval(timer);
+                timer = null;
+            }
+            if (btnPlay) {
+                btnPlay.classList.remove('bg-rose-600', 'hover:bg-rose-500');
+                btnPlay.classList.add('bg-amber-600', 'hover:bg-amber-500');
+                btnPlay.innerHTML = '<i data-lucide="play" class="w-4 h-4"></i> จำลองอัตโนมัติ';
+            }
+            if (window.lucide) lucide.createIcons();
+        }
+
+        // Presets
+        document.querySelectorAll('.preset-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                inputN.value = btn.dataset.n;
+                resetSimulation();
+            });
+        });
+
+        // Speed Slider
+        sliderSpeed.addEventListener('input', () => {
+            speedLabel.textContent = `${sliderSpeed.value}ms`;
+            if (isRunning) {
+                stopAutoPlay();
+                startAutoPlay();
+            }
+        });
+
+        // Sound Toggle
+        btnToggleSound.addEventListener('click', () => {
+            soundEnabled = !soundEnabled;
+            soundIcon.setAttribute('data-lucide', soundEnabled ? 'volume-2' : 'volume-x');
+            soundLabel.textContent = soundEnabled ? 'เสียง: เปิด' : 'เสียง: ปิด';
+            if (window.lucide) lucide.createIcons();
+        });
+
+        // Playback Buttons
+        btnPlay.addEventListener('click', () => {
+            if (isRunning) stopAutoPlay();
+            else startAutoPlay();
+        });
+        btnStep.addEventListener('click', () => {
+            stopAutoPlay();
+            stepSimulation();
+        });
+        btnReset.addEventListener('click', resetSimulation);
+        inputN.addEventListener('input', resetSimulation);
+
+        const snippetTemplate = `#include <iostream>
+#include <vector>
+#include <utility>
+
+using namespace std;
+
+// ฟังก์ชันแยกตัวประกอบเฉพาะ Time Complexity: O(sqrt(N))
+vector<pair<long long, int>> primeFactorize(long long n) {
+    vector<pair<long long, int>> factors;
+
+    // ขั้นที่ 1: ดึงตัวประกอบ 2 ออกจนหมด
+    if (n % 2 == 0) {
+        int cnt = 0;
+        while (n % 2 == 0) {
+            cnt++;
+            n /= 2;
+        }
+        factors.push_back({2, cnt});
+    }
+
+    // ขั้นที่ 2: วนลูปเฉพาะเลขคี่ตั้งแต่ 3 ถึง sqrt(n)
+    for (long long d = 3; d * d <= n; d += 2) {
+        if (n % d == 0) {
+            int cnt = 0;
+            while (n % d == 0) {
+                cnt++;
+                n /= d;
+            }
+            factors.push_back({d, cnt});
+        }
+    }
+
+    // ขั้นที่ 3: หากเหลือเศษ n > 1 แสดงว่าเป็นจำนวนเฉพาะตัวสุดท้าย
+    if (n > 1) {
+        factors.push_back({n, 1});
+    }
+
+    return factors;
+}
+
+// ตัวอย่างการประยุกต์หาจำนวนตัวหารทั้งหมด: sigma_0(n) = ∏(a_i + 1)
+long long countDivisors(const vector<pair<long long, int>>& factors) {
+    long long total = 1;
+    for (const auto& f : factors) {
+        total *= (f.second + 1);
+    }
+    return total;
+}
+
+int main() {
+    ios_base::sync_with_stdio(false);
+    cin.tie(NULL);
+
+    long long n;
+    if (cin >> n && n > 1) {
+        auto factors = primeFactorize(n);
+
+        cout << n << " = ";
+        for (size_t i = 0; i < factors.size(); i++) {
+            cout << factors[i].first << "^" << factors[i].second;
+            if (i + 1 < factors.size()) cout << " * ";
+        }
+        cout << "\\n";
+        cout << "จำนวนตัวหารทั้งหมด = " << countDivisors(factors) << "\\n";
+    }
+    return 0;
+}`;
+
+        const displayCodeBlock = document.getElementById('display-code-block');
+        const btnCopyCode = document.getElementById('btn-copy-code');
+        const copyBtnText = document.getElementById('copy-btn-text');
+        const copyToast = document.getElementById('copy-toast');
+
+        if (displayCodeBlock) displayCodeBlock.textContent = snippetTemplate;
+
+        btnCopyCode.addEventListener('click', () => {
+            const temp = document.createElement('textarea');
+            temp.value = snippetTemplate;
+            temp.style.position = 'fixed';
+            temp.style.left = '-9999px';
+            document.body.appendChild(temp);
+            temp.focus();
+            temp.select();
+            try {
+                document.execCommand('copy');
+                copyBtnText.textContent = 'คัดลอกสำเร็จ!';
+                copyToast.classList.remove('hidden');
+                setTimeout(() => {
+                    copyToast.classList.add('hidden');
+                    copyBtnText.textContent = 'คัดลอกโค้ด C++';
+                }, 2500);
+            } catch (err) {
+                console.error(err);
+            }
+            document.body.removeChild(temp);
+        });
+
+        // Init
+        if (window.lucide) lucide.createIcons();
+        resetSimulation();
+    });
+    </script>
+</body>
+</html>

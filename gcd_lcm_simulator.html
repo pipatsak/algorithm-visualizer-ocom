@@ -1,0 +1,1249 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GCD & LCM Simulator - ห.ร.ม. และ ค.ร.น.</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tone.js for synthesized audio effects -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Google Fonts Prompt & Fira Code -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Prompt', sans-serif;
+        }
+        code, pre, .font-mono {
+            font-family: 'Fira Code', monospace;
+        }
+        .code-highlight {
+            background-color: rgba(56, 189, 248, 0.28) !important;
+            border-left: 4px solid #38bdf8 !important;
+            color: #ffffff !important;
+            font-weight: 600;
+            padding-left: 8px;
+            transition: all 0.15s ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col antialiased selection:bg-cyan-500 selection:text-white">
+
+    <header class="border-b border-slate-800 bg-slate-900/90 backdrop-blur sticky top-0 z-30 px-4 py-3">
+        <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-600 via-indigo-600 to-amber-500 flex items-center justify-center shadow-lg shadow-cyan-500/20">
+                    <i data-lucide="binary" class="w-5 h-5 text-white"></i>
+                </div>
+                <div>
+                    <h1 class="text-base md:text-lg font-bold text-white flex items-center gap-2">
+                        เครื่องมือจำลอง ห.ร.ม. & ค.ร.น. (GCD & LCM Simulator)
+                        <span id="label-complexity-badge" class="text-xs font-medium px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">O(log min(a, b))</span>
+                    </h1>
+                    <p class="text-xs text-slate-400">เปรียบเทียบ 3 รูปแบบ: วนลูปถอยหลังจาก min vs หารเอาเศษ (%) vs ลบซ้ำ (-)</p>
+                </div>
+            </div>
+
+            <!-- Algorithm Mode Buttons & Audio Toggle -->
+            <div class="flex items-center gap-2 bg-slate-800/80 p-1.5 rounded-xl border border-slate-700">
+                <div class="flex flex-wrap gap-1 bg-slate-900 p-1 rounded-lg border border-slate-700/60 text-xs">
+                    <button id="mode-btn-brute" class="px-2.5 py-1 font-semibold rounded-md text-slate-400 hover:text-white transition-all flex items-center gap-1.5">
+                        <i data-lucide="arrow-down" class="w-3.5 h-3.5"></i> แบบปกติ (Loop)
+                    </button>
+                    <button id="mode-btn-modulo" class="px-2.5 py-1 font-semibold rounded-md bg-cyan-600 text-white transition-all flex items-center gap-1.5">
+                        <i data-lucide="percent" class="w-3.5 h-3.5"></i> หารเอาเศษ (%)
+                    </button>
+                    <button id="mode-btn-subtraction" class="px-2.5 py-1 font-semibold rounded-md text-slate-400 hover:text-white transition-all flex items-center gap-1.5">
+                        <i data-lucide="minus" class="w-3.5 h-3.5"></i> ลบซ้ำ (-)
+                    </button>
+                </div>
+                <button id="btn-toggle-sound" title="เปิด/ปิดเสียงเอฟเฟกต์" class="p-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-slate-700/60 transition-all ml-1">
+                    <i data-lucide="volume-2" id="sound-icon" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 space-y-6">
+        <!-- Controls Card -->
+        <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-4 md:p-5 shadow-xl backdrop-blur-sm">
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
+                <!-- Input A -->
+                <div class="md:col-span-3">
+                    <label class="block text-xs font-medium text-slate-300 mb-1 flex items-center gap-1">
+                        <span class="w-2 h-2 rounded-full bg-cyan-400"></span> จำนวนเต็ม a:
+                    </label>
+                    <input type="number" id="input-a" value="48" min="1" max="1000000" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 font-mono">
+                </div>
+
+                <!-- Input B -->
+                <div class="md:col-span-3">
+                    <label class="block text-xs font-medium text-slate-300 mb-1 flex items-center gap-1">
+                        <span class="w-2 h-2 rounded-full bg-indigo-400"></span> จำนวนเต็ม b:
+                    </label>
+                    <input type="number" id="input-b" value="18" min="1" max="1000000" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 font-mono">
+                </div>
+
+                <!-- Preset Quick Buttons -->
+                <div class="md:col-span-6 flex flex-wrap items-center justify-end gap-2">
+                    <span class="text-xs text-slate-400 mr-1">ชุดตัวเลขตัวอย่าง:</span>
+                    <button class="preset-btn bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs px-2.5 py-2 rounded-xl transition-all" data-a="48" data-b="18">48, 18 (ทั่วไป)</button>
+                    <button class="preset-btn bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs px-2.5 py-2 rounded-xl transition-all" data-a="55" data-b="34">55, 34 (Fibonacci)</button>
+                    <button class="preset-btn bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs px-2.5 py-2 rounded-xl transition-all" data-a="100" data-b="3">100, 3 (เห็นผลต่างรอบชัด!)</button>
+                    <button class="preset-btn bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs px-2.5 py-2 rounded-xl transition-all" data-a="105" data-b="25">105, 25</button>
+                </div>
+            </div>
+
+            <!-- Playback Controls -->
+            <div class="mt-4 pt-4 border-t border-slate-700/80 flex flex-wrap items-center justify-between gap-3">
+                <div class="flex items-center gap-2 bg-slate-900/80 px-3 py-1.5 rounded-xl border border-slate-700/60">
+                    <span class="text-xs text-slate-400">ความเร็ว:</span>
+                    <input type="range" id="slider-speed" min="150" max="1500" step="50" value="600" class="w-24 accent-cyan-500 cursor-pointer">
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <button id="btn-step" class="bg-slate-700 hover:bg-slate-600 text-white text-xs font-semibold py-2 px-3.5 rounded-xl flex items-center gap-1.5 transition-all">
+                        <i data-lucide="step-forward" class="w-4 h-4"></i> ทีละขั้นตอน (Step)
+                    </button>
+                    <button id="btn-play" class="bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold py-2 px-4 rounded-xl flex items-center gap-1.5 shadow-lg shadow-cyan-600/30 transition-all">
+                        <i data-lucide="play" id="icon-play" class="w-4 h-4"></i> จำลองอัตโนมัติ
+                    </button>
+                    <button id="btn-reset" class="bg-slate-700 hover:bg-red-500/20 hover:text-red-300 text-slate-300 text-xs font-semibold py-2 px-3 rounded-xl flex items-center gap-1.5 transition-all">
+                        <i data-lucide="rotate-ccw" class="w-4 h-4"></i> รีเซ็ต
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+            <!-- Left Column: Visualizer Board (7 cols) -->
+            <div class="lg:col-span-7 bg-slate-800/80 border border-slate-700/80 rounded-2xl p-5 md:p-6 shadow-xl flex flex-col justify-between">
+                <div>
+                    <!-- Visualizer Title Strip -->
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+                        <div>
+                            <h2 id="viz-title" class="text-sm font-bold uppercase tracking-wider text-slate-200 flex items-center gap-2">
+                                <span class="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
+                                จำลองแบบหารเอาเศษ (Modulo %) - ใช้ตัวแปร t สลับค่า
+                            </h2>
+                            <p id="viz-subtitle" class="text-xs text-slate-400 mt-0.5">ทำงานผ่าน while (b != 0) ด้วย t = b; b = a % b; a = t;</p>
+                        </div>
+                        <div class="flex items-center gap-2 text-xs bg-slate-900/80 px-3 py-1.5 rounded-xl border border-slate-700/60 font-mono">
+                            <span class="text-slate-400">ขั้นตอนที่: <strong id="stat-step" class="text-cyan-400 text-sm">0 / 0</strong></span>
+                        </div>
+                    </div>
+
+                    <!-- Visual Comparison Canvas -->
+                    <div id="container-tiling" class="bg-slate-950 border border-slate-800 rounded-xl p-4 min-h-[160px] flex flex-col items-center justify-center relative overflow-hidden">
+                        <div class="w-full flex flex-col items-center justify-center">
+                            <div class="text-xs text-slate-400 mb-2 flex items-center gap-2">
+                                <i data-lucide="bar-chart-2" class="w-3.5 h-3.5 text-cyan-400"></i>
+                                ขนาดเปรียบเทียบปัจจุบัน: a = <span id="label-val-a" class="font-mono text-cyan-300 font-bold">48</span>, b = <span id="label-val-b" class="font-mono text-indigo-300 font-bold">18</span>
+                            </div>
+                            <!-- Canvas Element -->
+                            <canvas id="tiling-canvas" width="600" height="130" class="max-w-full rounded-lg border border-slate-800 bg-slate-900/90 shadow-inner"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Trace Division Table -->
+                    <div class="mt-4 overflow-x-auto bg-slate-900/90 rounded-xl border border-slate-700/70 p-3 max-h-[260px] overflow-y-auto">
+                        <div class="text-xs font-bold text-slate-300 mb-2 flex items-center justify-between sticky top-0 bg-slate-900/95 py-1 z-10">
+                            <span class="flex items-center gap-1.5">
+                                <i data-lucide="table" class="w-3.5 h-3.5 text-cyan-400"></i>
+                                ตารางการทำงานของตัวแปรในแต่ละรอบ (Trace Table)
+                            </span>
+                            <span id="table-badge-mode" class="text-[11px] font-mono text-cyan-400">Mode: Modulo</span>
+                        </div>
+                        <table class="w-full text-xs text-left">
+                            <thead id="table-head">
+                                <tr class="text-slate-400 border-b border-slate-800">
+                                    <th class="py-1.5 px-2 font-mono">รอบ</th>
+                                    <th class="py-1.5 px-2 font-mono">a (ก่อน)</th>
+                                    <th class="py-1.5 px-2 font-mono">b (ก่อน)</th>
+                                    <th class="py-1.5 px-2 font-mono text-amber-300">t = b</th>
+                                    <th class="py-1.5 px-2 font-mono text-cyan-300">b = a % b</th>
+                                    <th class="py-1.5 px-2 font-mono">การเปลี่ยนค่าตัวแปร</th>
+                                </tr>
+                            </thead>
+                            <tbody id="division-table-body" class="divide-y divide-slate-800/60 font-mono text-slate-200">
+                                <!-- Dynamic rows inserted by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div>
+                    <!-- Result Summary Metrics Card (5 items: GCD, LCM, Rounds, t/i, Current Op) -->
+                    <div class="mt-4 grid grid-cols-2 sm:grid-cols-5 gap-2">
+                        <div class="bg-slate-900/90 p-2.5 rounded-xl border border-slate-700/70 text-center">
+                            <span class="text-[11px] text-slate-400 block font-medium">ห.ร.ม. (GCD)</span>
+                            <span id="res-gcd" class="text-base font-bold font-mono text-emerald-400 mt-0.5 block">-</span>
+                        </div>
+                        <div class="bg-slate-900/90 p-2.5 rounded-xl border border-slate-700/70 text-center">
+                            <span class="text-[11px] text-slate-400 block font-medium">ค.ร.น. (LCM)</span>
+                            <span id="res-lcm" class="text-base font-bold font-mono text-fuchsia-400 mt-0.5 block">-</span>
+                        </div>
+                        <div class="bg-slate-900/90 p-2.5 rounded-xl border border-slate-700/70 text-center">
+                            <span class="text-[11px] text-slate-400 block font-medium">จำนวนรอบ</span>
+                            <span id="res-rounds" class="text-base font-bold font-mono text-cyan-400 mt-0.5 block">-</span>
+                        </div>
+                        <div class="bg-slate-900/90 p-2.5 rounded-xl border border-slate-700/70 text-center">
+                            <span class="text-[11px] text-slate-400 block font-medium">ตัวแปร t / i</span>
+                            <span id="res-t" class="text-base font-bold font-mono text-amber-300 mt-0.5 block">-</span>
+                        </div>
+                        <div class="bg-slate-900/90 p-2.5 rounded-xl border border-slate-700/70 text-center col-span-2 sm:col-span-1">
+                            <span class="text-[11px] text-slate-400 block font-medium">การดำเนินการ</span>
+                            <span id="res-op" class="text-xs font-bold font-mono text-indigo-300 mt-1 block truncate">-</span>
+                        </div>
+                    </div>
+
+                    <!-- Step Explanation Notification Banner -->
+                    <div id="status-banner" class="mt-3 p-3.5 rounded-xl bg-slate-900/90 border border-slate-700/80 flex items-start gap-3 transition-all">
+                        <div id="status-badge" class="mt-0.5 p-1.5 rounded-lg bg-cyan-500/20 text-cyan-400 shrink-0">
+                            <i data-lucide="info" class="w-4 h-4"></i>
+                        </div>
+                        <div class="flex-1">
+                            <h3 id="status-title" class="text-xs font-bold text-slate-200 mb-0.5">สถานะการทำงาน</h3>
+                            <p id="status-desc" class="text-xs text-slate-400 leading-relaxed">กดปุ่ม "จำลองอัตโนมัติ" หรือ "ทีละขั้นตอน (Step)" เพื่อเริ่มดูการทำงานของโค้ด</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Interactive C++ Code Simulator (5 cols) -->
+            <div class="lg:col-span-5 bg-slate-950 border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-3">
+                        <div class="flex items-center gap-2">
+                            <div class="flex gap-1.5">
+                                <span class="w-3 h-3 rounded-full bg-rose-500/80 inline-block"></span>
+                                <span class="w-3 h-3 rounded-full bg-amber-500/80 inline-block"></span>
+                                <span class="w-3 h-3 rounded-full bg-emerald-500/80 inline-block"></span>
+                            </div>
+                            <span id="code-filename" class="text-xs font-mono text-slate-400 font-semibold ml-2">gcd_modulo.cpp</span>
+                        </div>
+                        <span id="code-badge" class="text-[11px] font-mono px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">Modulo (%) Loop</span>
+                    </div>
+
+                    <!-- Brute Force Code View (Matching User's Screenshot + LCM) -->
+                    <div id="code-box-brute" class="hidden font-mono text-xs leading-relaxed space-y-1 overflow-x-auto py-1">
+                        <div id="brute-line-1" class="px-2 py-0.5 rounded text-slate-400 transition-all"><span class="text-purple-400 font-semibold">int</span> <span class="text-blue-400">gcd</span>(<span class="text-purple-400 font-semibold">int</span> a, <span class="text-purple-400 font-semibold">int</span> b) {</div>
+                        <div id="brute-line-2" class="px-2 py-0.5 rounded text-slate-400 transition-all">&nbsp;&nbsp;<span class="text-purple-400 font-semibold">int</span> min = a &lt; b ? a : b;</div>
+                        <div id="brute-line-3" class="px-2 py-0.5 rounded text-slate-400 transition-all">&nbsp;&nbsp;<span class="text-purple-400 font-semibold">for</span> (<span class="text-purple-400 font-semibold">int</span> i = min; i &gt;= <span class="text-amber-300">1</span>; i--) {</div>
+                        <div id="brute-line-4" class="px-2 py-0.5 rounded text-slate-400 transition-all">&nbsp;&nbsp;&nbsp;&nbsp;<span class="text-purple-400 font-semibold">if</span> (a % i == <span class="text-amber-300">0</span> &amp;&amp; b % i == <span class="text-amber-300">0</span>) {</div>
+                        <div id="brute-line-5" class="px-2 py-0.5 rounded text-slate-400 transition-all">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="text-purple-400 font-semibold">return</span> i;</div>
+                        <div id="brute-line-6" class="px-2 py-0.5 rounded text-slate-400 transition-all">&nbsp;&nbsp;&nbsp;&nbsp;}</div>
+                        <div id="brute-line-7" class="px-2 py-0.5 rounded text-slate-400 transition-all">&nbsp;&nbsp;}</div>
+                        <div id="brute-line-8" class="px-2 py-0.5 rounded text-slate-400 transition-all">}</div>
+                        <div id="brute-line-9" class="px-2 py-0.5 rounded text-slate-400 transition-all mt-2"><span class="text-purple-400 font-semibold">int</span> <span class="text-blue-400">lcm</span>(<span class="text-purple-400 font-semibold">int</span> a, <span class="text-purple-400 font-semibold">int</span> b) {</div>
+                        <div id="brute-line-10" class="px-2 py-0.5 rounded text-slate-400 transition-all">&nbsp;&nbsp;<span class="text-purple-400 font-semibold">return</span> (a / <span class="text-blue-400">gcd</span>(a, b)) * b; <span class="text-slate-500">// ป้องกัน overflow</span></div>
+                        <div id="brute-line-11" class="px-2 py-0.5 rounded text-slate-400 transition-all">}</div>
+                    </div>
+
+                    <!-- Modulo Code View (Matches User's exact Code + LCM) -->
+                    <div id="code-box-modulo" class="font-mono text-xs leading-relaxed space-y-1 overflow-x-auto py-1">
+                        <div id="mod-line-1" class="px-2 py-0.5 rounded text-slate-400 transition-all"><span class="text-purple-400 font-semibold">int</span> <span class="text-blue-400">gcdEuclid</span>(<span class="text-purple-400 font-semibold">int</span> a, <span class="text-purple-400 font-semibold">int</span> b) {</div>
+                        <div id="mod-line-2" class="px-2 py-0.5 rounded text-slate-400 transition-all">&nbsp;&nbsp;<span class="text-purple-400 font-semibold">int</span> t;</div>
+                        <div id="mod-line-3" class="px-2 py-0.5 rounded text-slate-400 transition-all">&nbsp;&nbsp;<span class="text-purple-400 font-semibold">while</span> (b != <span class="text-amber-300">0</span>) {</div>
+                        <div id="mod-line-4" class="px-2 py-0.5 rounded text-slate-400 transition-all">&nbsp;&nbsp;&nbsp;&nbsp;t = b;</div>
+                        <div id="mod-line-5" class="px-2 py-0.5 rounded text-slate-400 transition-all">&nbsp;&nbsp;&nbsp;&nbsp;b = a % b;</div>
+                        <div id="mod-line-6" class="px-2 py-0.5 rounded text-slate-400 transition-all">&nbsp;&nbsp;&nbsp;&nbsp;a = t;</div>
+                        <div id="mod-line-7" class="px-2 py-0.5 rounded text-slate-400 transition-all">&nbsp;&nbsp;}</div>
+                        <div id="mod-line-8" class="px-2 py-0.5 rounded text-slate-400 transition-all">&nbsp;&nbsp;<span class="text-purple-400 font-semibold">return</span> a;</div>
+                        <div id="mod-line-9" class="px-2 py-0.5 rounded text-slate-400 transition-all">}</div>
+                        <div id="mod-line-10" class="px-2 py-0.5 rounded text-slate-400 transition-all mt-2"><span class="text-purple-400 font-semibold">int</span> <span class="text-blue-400">lcm</span>(<span class="text-purple-400 font-semibold">int</span> a, <span class="text-purple-400 font-semibold">int</span> b) {</div>
+                        <div id="mod-line-11" class="px-2 py-0.5 rounded text-slate-400 transition-all">&nbsp;&nbsp;<span class="text-purple-400 font-semibold">return</span> (a / <span class="text-blue-400">gcdEuclid</span>(a, b)) * b;</div>
+                        <div id="mod-line-12" class="px-2 py-0.5 rounded text-slate-400 transition-all">}</div>
+                    </div>
+
+                    <!-- Subtraction Code View -->
+                    <div id="code-box-subtraction" class="hidden font-mono text-xs leading-relaxed space-y-1 overflow-x-auto py-1">
+                        <div id="sub-line-1" class="px-2 py-0.5 rounded text-slate-400 transition-all"><span class="text-purple-400 font-semibold">int</span> <span class="text-blue-400">gcdSubtract</span>(<span class="text-purple-400 font-semibold">int</span> a, <span class="text-purple-400 font-semibold">int</span> b) {</div>
+                        <div id="sub-line-2" class="px-2 py-0.5 rounded text-slate-400 transition-all">&nbsp;&nbsp;<span class="text-purple-400 font-semibold">while</span> (a != b) {</div>
+                        <div id="sub-line-3" class="px-2 py-0.5 rounded text-slate-400 transition-all">&nbsp;&nbsp;&nbsp;&nbsp;<span class="text-purple-400 font-semibold">if</span> (a &gt; b) {</div>
+                        <div id="sub-line-4" class="px-2 py-0.5 rounded text-slate-400 transition-all">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;a = a - b;</div>
+                        <div id="sub-line-5" class="px-2 py-0.5 rounded text-slate-400 transition-all">&nbsp;&nbsp;&nbsp;&nbsp;} <span class="text-purple-400 font-semibold">else</span> {</div>
+                        <div id="sub-line-6" class="px-2 py-0.5 rounded text-slate-400 transition-all">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;b = b - a;</div>
+                        <div id="sub-line-7" class="px-2 py-0.5 rounded text-slate-400 transition-all">&nbsp;&nbsp;&nbsp;&nbsp;}</div>
+                        <div id="sub-line-8" class="px-2 py-0.5 rounded text-slate-400 transition-all">&nbsp;&nbsp;}</div>
+                        <div id="sub-line-9" class="px-2 py-0.5 rounded text-slate-400 transition-all">&nbsp;&nbsp;<span class="text-purple-400 font-semibold">return</span> a;</div>
+                        <div id="sub-line-10" class="px-2 py-0.5 rounded text-slate-400 transition-all">}</div>
+                        <div id="sub-line-11" class="px-2 py-0.5 rounded text-slate-400 transition-all mt-2"><span class="text-purple-400 font-semibold">int</span> <span class="text-blue-400">lcm</span>(<span class="text-purple-400 font-semibold">int</span> a, <span class="text-purple-400 font-semibold">int</span> b) {</div>
+                        <div id="sub-line-12" class="px-2 py-0.5 rounded text-slate-400 transition-all">&nbsp;&nbsp;<span class="text-purple-400 font-semibold">return</span> (a / <span class="text-blue-400">gcdSubtract</span>(a, b)) * b;</div>
+                        <div id="sub-line-13" class="px-2 py-0.5 rounded text-slate-400 transition-all">}</div>
+                    </div>
+                </div>
+
+                <div class="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400">
+                    <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded bg-cyan-400"></span> แถบสีสว่าง = บรรทัดที่กำลังประมวลผล</span>
+                    <span class="font-mono text-cyan-400 font-medium">สอวน. ค่าย 1 คอมพิวเตอร์</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Code Export Box -->
+        <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-5 shadow-xl">
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+                <div class="flex items-center gap-2">
+                    <div class="p-1.5 rounded-lg bg-cyan-500/20 text-cyan-400">
+                        <i data-lucide="code-2" class="w-4 h-4"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-sm font-bold uppercase tracking-wider text-slate-200">
+                            ซอร์สโค้ดภาษา C++ (int) พร้อมฟังก์ชัน หา ห.ร.ม. และ ค.ร.น.
+                        </h2>
+                        <p class="text-xs text-slate-400">สามารถคัดลอกโค้ดเพื่อนำไปคอมไพล์และทดสอบรันบนเครื่องได้ทันที</p>
+                    </div>
+                </div>
+                <!-- Copy Switcher -->
+                <div class="flex items-center gap-2">
+                    <div class="flex bg-slate-900 p-1 rounded-xl border border-slate-700">
+                        <button id="tab-code-brute" class="px-2.5 py-1 text-xs font-semibold rounded-lg text-slate-400 hover:text-white transition-all">แบบปกติ (Loop)</button>
+                        <button id="tab-code-mod" class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-cyan-600 text-white transition-all">หารเอาเศษ (%)</button>
+                        <button id="tab-code-sub" class="px-2.5 py-1 text-xs font-semibold rounded-lg text-slate-400 hover:text-white transition-all">ลบซ้ำ (-)</button>
+                    </div>
+                    <button id="btn-copy-code" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold py-1.5 px-3.5 rounded-xl flex items-center gap-1.5 shadow-lg shadow-emerald-600/20 transition-all">
+                        <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                        <span id="copy-btn-text">คัดลอกโค้ด</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Code Container Box -->
+            <div class="relative bg-slate-950 border border-slate-800 rounded-xl p-4 font-mono text-xs overflow-x-auto text-slate-300">
+                <pre id="display-code-block" class="whitespace-pre"><code>// กำลังโหลดโค้ด...</code></pre>
+            </div>
+            <div id="copy-toast" class="hidden mt-2.5 text-xs text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-lg flex items-center gap-1.5">
+                <i data-lucide="check" class="w-3.5 h-3.5"></i> คัดลอกโค้ดลงคลิปบอร์ดเรียบร้อยแล้ว! สามารถนำไปวาง (Ctrl+V) ใน IDE ได้ทันที
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-4">
+                <h3 class="text-xs font-bold text-amber-300 mb-2 flex items-center gap-1.5">
+                    <i data-lucide="arrow-down" class="w-4 h-4 text-amber-400"></i> แบบปกติ (Brute Force Loop)
+                </h3>
+                <p class="text-xs text-slate-400 leading-relaxed">
+                    หาค่า $\min(a, b)$ แล้วใช้ลูป <code>for (int i = min; i >= 1; i--)</code> ตรวจเศษ $a \% i == 0$ และ $b \% i == 0$<br>
+                    <strong>Time Complexity:</strong> $O(\min(a, b))$ ช้ามากเมื่อตัวเลขมีค่ามาก
+                </p>
+            </div>
+
+            <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-4">
+                <h3 class="text-xs font-bold text-rose-300 mb-2 flex items-center gap-1.5">
+                    <i data-lucide="minus" class="w-4 h-4 text-rose-400"></i> แบบลบซ้ำ (Subtraction -)
+                </h3>
+                <p class="text-xs text-slate-400 leading-relaxed">
+                    ใช้ลูป <code>while (a != b)</code> ลบตัวมากลงด้วยตัวน้อยเรื่อยๆ จนกว่าทั้งสองจะเท่ากัน<br>
+                    <strong>Time Complexity:</strong> $O(\max(a, b))$ แย่ที่สุดเมื่อตัวเลขต่างกันมหาศาล เช่น $(10^6, 1)$ ลูปถึง $999,999$ รอบ
+                </p>
+            </div>
+
+            <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-4">
+                <h3 class="text-xs font-bold text-cyan-300 mb-2 flex items-center gap-1.5">
+                    <i data-lucide="zap" class="w-4 h-4 text-cyan-400"></i> แบบหารเอาเศษ (Euclidean Modulo %)
+                </h3>
+                <p class="text-xs text-slate-400 leading-relaxed">
+                    รวบยอดการลบด้วยคำนวณ $a \pmod b$ ผ่านตัวแปรพักค่า <code>t</code> จนกว่า $b == 0$<br>
+                    <strong>Time Complexity:</strong> $O(\log \min(a, b))$ รวดเร็วที่สุด ตัวเลขระดับ $10^9$ ใช้ไม่เกิน 30 รอบ
+                </p>
+            </div>
+        </div>
+    </main>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // Application State
+        let currentMode = 'modulo'; // 'brute', 'modulo', or 'subtraction'
+        let valA = 48;
+        let valB = 18;
+        let steps = [];
+        let currentStepIndex = -1;
+        let isRunning = false;
+        let timer = null;
+        let soundEnabled = true;
+
+        // Tone.js Sound Synthesizer
+        let synth = null;
+        function getSynth() {
+            if (!synth && typeof Tone !== 'undefined') {
+                try {
+                    synth = new Tone.PolySynth(Tone.Synth, {
+                        oscillator: { type: "triangle" },
+                        envelope: { attack: 0.005, decay: 0.08, sustain: 0.02, release: 0.08 }
+                    }).toDestination();
+                    synth.volume.value = -12;
+                } catch (e) {
+                    console.warn("Tone initialization error:", e);
+                }
+            }
+            return synth;
+        }
+
+        function playSound(type) {
+            if (!soundEnabled) return;
+            try {
+                if (typeof Tone !== 'undefined' && Tone.context && Tone.context.state !== 'running') {
+                    Tone.start();
+                }
+                const s = getSynth();
+                if (!s) return;
+                const now = Tone.now();
+                if (type === 'step') {
+                    s.triggerAttackRelease("E4", "0.05", now);
+                } else if (type === 'done') {
+                    s.triggerAttackRelease(["C5", "E5", "G5", "C6"], "0.25", now);
+                }
+            } catch (e) {}
+        }
+
+        // Element Selectors
+        const inputA = document.getElementById('input-a');
+        const inputB = document.getElementById('input-b');
+        const modeBtnBrute = document.getElementById('mode-btn-brute');
+        const modeBtnModulo = document.getElementById('mode-btn-modulo');
+        const modeBtnSubtraction = document.getElementById('mode-btn-subtraction');
+        const btnToggleSound = document.getElementById('btn-toggle-sound');
+        const soundIcon = document.getElementById('sound-icon');
+        const sliderSpeed = document.getElementById('slider-speed');
+        const btnPlay = document.getElementById('btn-play');
+        const btnStep = document.getElementById('btn-step');
+        const btnReset = document.getElementById('btn-reset');
+
+        const vizTitle = document.getElementById('viz-title');
+        const vizSubtitle = document.getElementById('viz-subtitle');
+        const statStep = document.getElementById('stat-step');
+        const labelValA = document.getElementById('label-val-a');
+        const labelValB = document.getElementById('label-val-b');
+        const tilingCanvas = document.getElementById('tiling-canvas');
+        const divisionTableBody = document.getElementById('division-table-body');
+        const tableHead = document.getElementById('table-head');
+        const tableBadgeMode = document.getElementById('table-badge-mode');
+
+        const resGcd = document.getElementById('res-gcd');
+        const resLcm = document.getElementById('res-lcm');
+        const resRounds = document.getElementById('res-rounds');
+        const resT = document.getElementById('res-t');
+        const resOp = document.getElementById('res-op');
+
+        const statusTitle = document.getElementById('status-title');
+        const statusDesc = document.getElementById('status-desc');
+        const statusBadge = document.getElementById('status-badge');
+
+        const codeFilename = document.getElementById('code-filename');
+        const codeBadge = document.getElementById('code-badge');
+        const codeBoxBrute = document.getElementById('code-box-brute');
+        const codeBoxModulo = document.getElementById('code-box-modulo');
+        const codeBoxSubtraction = document.getElementById('code-box-subtraction');
+        const labelComplexityBadge = document.getElementById('label-complexity-badge');
+
+        // Algorithm 1: Brute Force Step Generator
+        function computeBruteSteps(a, b) {
+            const list = [];
+            const minVal = a < b ? a : b;
+            let round = 1;
+            const maxRounds = 120; // UI Cap to keep simulator responsive
+
+            for (let i = minVal; i >= 1; i--) {
+                const remA = a % i;
+                const remB = b % i;
+                const isDivisible = (remA === 0 && remB === 0);
+
+                list.push({
+                    type: 'step',
+                    mode: 'brute',
+                    round: round,
+                    i: i,
+                    a: a,
+                    b: b,
+                    remA: remA,
+                    remB: remB,
+                    isDivisible: isDivisible,
+                    action: `${a} % ${i} = ${remA}, ${b} % ${i} = ${remB} ${isDivisible ? '✓ (ลงตัวทั้งคู่!)' : '✗'}`
+                });
+
+                if (isDivisible) {
+                    list.push({
+                        type: 'done',
+                        mode: 'brute',
+                        round: round,
+                        a: a,
+                        b: b,
+                        gcd: i,
+                        action: `พบตัวแรกที่หารลงตัวทั้งคู่: i = ${i} -> return ${i}`
+                    });
+                    break;
+                }
+
+                if (round >= maxRounds && i > 1) {
+                    let realGcd = 1;
+                    for (let g = i - 1; g >= 1; g--) {
+                        if (a % g === 0 && b % g === 0) {
+                            realGcd = g;
+                            break;
+                        }
+                    }
+                    list.push({
+                        type: 'skip',
+                        round: round + 1,
+                        action: `... ข้ามขั้นตอนระหว่างกลาง (${i - 1} ถึง ${realGcd + 1}) เพื่อไม่ให้เบราว์เซอร์ค้าง ...`
+                    });
+                    list.push({
+                        type: 'step',
+                        mode: 'brute',
+                        round: round + 2,
+                        i: realGcd,
+                        a: a,
+                        b: b,
+                        remA: 0,
+                        remB: 0,
+                        isDivisible: true,
+                        action: `${a} % ${realGcd} = 0, ${b} % ${realGcd} = 0 ✓ (พบตัวที่ลงตัวทั้งคู่!)`
+                    });
+                    list.push({
+                        type: 'done',
+                        mode: 'brute',
+                        round: round + 2,
+                        a: a,
+                        b: b,
+                        gcd: realGcd,
+                        action: `สิ้นสุดการค้นหา: return ${realGcd}`
+                    });
+                    break;
+                }
+                round++;
+            }
+            return list;
+        }
+
+        // Algorithm 2: Euclidean Modulo (%) Step Generator
+        function computeModuloSteps(a, b) {
+            const list = [];
+            let curA = a;
+            let curB = b;
+            let round = 1;
+
+            while (curB !== 0) {
+                const t = curB;
+                const rem = curA % curB;
+                const nextA = t;
+                const nextB = rem;
+
+                list.push({
+                    type: 'step',
+                    mode: 'modulo',
+                    round: round,
+                    a: curA,
+                    b: curB,
+                    t: t,
+                    rem: rem,
+                    nextA: nextA,
+                    nextB: nextB,
+                    action: `t = ${t}; b = ${curA} % ${curB} = ${rem}; a = ${t};`
+                });
+
+                curA = nextA;
+                curB = nextB;
+                round++;
+            }
+
+            list.push({
+                type: 'done',
+                mode: 'modulo',
+                round: round,
+                a: curA,
+                b: 0,
+                gcd: curA,
+                action: `b == 0 -> หลุดลูป while และ return a = ${curA}`
+            });
+
+            return list;
+        }
+
+        // Algorithm 3: Subtraction (-) Step Generator
+        function computeSubtractionSteps(a, b) {
+            const list = [];
+            let curA = a;
+            let curB = b;
+            let round = 1;
+            const maxRounds = 200;
+
+            while (curA !== curB && round <= maxRounds) {
+                let nextA = curA;
+                let nextB = curB;
+                let action = '';
+                let executedBranch = '';
+
+                if (curA > curB) {
+                    nextA = curA - curB;
+                    action = `a > b : a = ${curA} - ${curB} = ${nextA}`;
+                    executedBranch = 'a_greater';
+                } else {
+                    nextB = curB - curA;
+                    action = `b > a : b = ${curB} - ${curA} = ${nextB}`;
+                    executedBranch = 'b_greater';
+                }
+
+                list.push({
+                    type: 'step',
+                    mode: 'subtraction',
+                    round: round,
+                    a: curA,
+                    b: curB,
+                    nextA: nextA,
+                    nextB: nextB,
+                    action: action,
+                    executedBranch: executedBranch
+                });
+
+                curA = nextA;
+                curB = nextB;
+                round++;
+            }
+
+            list.push({
+                type: 'done',
+                mode: 'subtraction',
+                round: round,
+                a: curA,
+                b: curB,
+                gcd: curA,
+                action: `a == b == ${curA} -> หลุดลูป while และ return a = ${curA}`
+            });
+
+            return list;
+        }
+
+        function highlightCode(type, line) {
+            let prefix = 'mod';
+            if (type === 'brute') prefix = 'brute';
+            else if (type === 'subtraction') prefix = 'sub';
+
+            const total = 13;
+            for (let i = 1; i <= total; i++) {
+                const el = document.getElementById(`${prefix}-line-${i}`);
+                if (el) {
+                    if (i === line) {
+                        el.classList.add('code-highlight');
+                    } else {
+                        el.classList.remove('code-highlight');
+                    }
+                }
+            }
+        }
+
+        function drawCanvas(curStep) {
+            if (!tilingCanvas) return;
+            const ctx = tilingCanvas.getContext('2d');
+            const W = tilingCanvas.width;
+            const H = tilingCanvas.height;
+            ctx.clearRect(0, 0, W, H);
+
+            let a = curStep ? curStep.a : valA;
+            let b = curStep ? curStep.b : valB;
+            if (labelValA) labelValA.textContent = a;
+            if (labelValB) labelValB.textContent = b;
+
+            const pad = 20;
+            const maxVal = Math.max(a, b, 1);
+            const availW = W - pad * 2 - 130;
+            const scale = availW / maxVal;
+
+            const barAH = 28;
+            const barBH = 28;
+            const barAW = Math.max(16, a * scale);
+            const barBW = Math.max(16, b * scale);
+
+            // Bar A (Cyan)
+            ctx.fillStyle = '#0284c7';
+            ctx.beginPath();
+            if (ctx.roundRect) ctx.roundRect(pad, 24, barAW, barAH, 6);
+            else ctx.rect(pad, 24, barAW, barAH);
+            ctx.fill();
+            ctx.strokeStyle = '#38bdf8';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 13px Fira Code, monospace';
+            ctx.textAlign = 'left';
+            ctx.fillText(`a = ${a}`, pad + 10, 43);
+
+            // Bar B (Indigo)
+            ctx.fillStyle = '#4f46e5';
+            ctx.beginPath();
+            if (ctx.roundRect) ctx.roundRect(pad, 74, barBW, barBH, 6);
+            else ctx.rect(pad, 74, barBW, barBH);
+            ctx.fill();
+            ctx.strokeStyle = '#818cf8';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+
+            ctx.fillStyle = '#ffffff';
+            ctx.fillText(`b = ${b}`, pad + 10, 93);
+
+            // Annotations on right
+            ctx.fillStyle = '#94a3b8';
+            ctx.font = '12px Prompt, sans-serif';
+            ctx.textAlign = 'right';
+            if (currentMode === 'brute') {
+                const curI = curStep && curStep.i !== undefined ? curStep.i : Math.min(a, b);
+                ctx.fillText(`ทดสอบ i = ${curI}`, W - pad, 43);
+                ctx.fillText(`min(a, b) = ${Math.min(a, b)}`, W - pad, 93);
+            } else if (currentMode === 'modulo') {
+                const rem = b !== 0 ? (a % b) : 0;
+                ctx.fillText(`เศษ a % b = ${rem}`, W - pad, 43);
+                ctx.fillText(b !== 0 ? `วนต่อขณะ b != 0` : `b เป็น 0 แล้ว!`, W - pad, 93);
+            } else {
+                ctx.fillText(`ผลต่าง |a - b| = ${Math.abs(a - b)}`, W - pad, 43);
+                ctx.fillText(a === b ? `a เท่ากับ b แล้ว!` : `วนต่อขณะ a != b`, W - pad, 93);
+            }
+        }
+
+        function renderTable() {
+            if (!divisionTableBody) return;
+            divisionTableBody.innerHTML = '';
+
+            steps.forEach((st, idx) => {
+                const tr = document.createElement('tr');
+                const isCurrent = (currentStepIndex === idx);
+
+                if (isCurrent) {
+                    tr.className = 'bg-cyan-500/20 text-white font-bold border-l-4 border-cyan-400';
+                } else {
+                    tr.className = 'hover:bg-slate-800/50 transition-colors';
+                }
+
+                if (st.type === 'step') {
+                    if (st.mode === 'brute') {
+                        tr.innerHTML = `
+                            <td class="py-1 px-2 text-slate-400">#${st.round}</td>
+                            <td class="py-1 px-2 text-amber-300 font-bold">${st.i}</td>
+                            <td class="py-1 px-2 text-cyan-300">${st.a} % ${st.i} = ${st.remA}</td>
+                            <td class="py-1 px-2 text-indigo-300">${st.b} % ${st.i} = ${st.remB}</td>
+                            <td class="py-1 px-2 ${st.isDivisible ? 'text-emerald-400 font-bold' : 'text-slate-400'}">${st.isDivisible ? 'ลงตัวทั้งคู่ ✓' : 'ยังไม่ลงตัว ✗'}</td>
+                            <td class="py-1 px-2 text-slate-300">${st.action}</td>
+                        `;
+                    } else if (st.mode === 'modulo') {
+                        tr.innerHTML = `
+                            <td class="py-1 px-2 text-slate-400">#${st.round}</td>
+                            <td class="py-1 px-2 text-cyan-300 font-bold">${st.a}</td>
+                            <td class="py-1 px-2 text-indigo-300 font-bold">${st.b}</td>
+                            <td class="py-1 px-2 text-amber-300 font-bold">${st.t}</td>
+                            <td class="py-1 px-2 text-emerald-300 font-bold">${st.rem}</td>
+                            <td class="py-1 px-2 text-slate-300">${st.action}</td>
+                        `;
+                    } else {
+                        tr.innerHTML = `
+                            <td class="py-1 px-2 text-slate-400">#${st.round}</td>
+                            <td class="py-1 px-2 text-cyan-300 font-bold">${st.a}</td>
+                            <td class="py-1 px-2 text-indigo-300 font-bold">${st.b}</td>
+                            <td class="py-1 px-2 text-slate-500">-</td>
+                            <td class="py-1 px-2 text-amber-300 font-bold">${Math.abs(st.a - st.b)}</td>
+                            <td class="py-1 px-2 text-slate-300">${st.action}</td>
+                        `;
+                    }
+                } else if (st.type === 'skip') {
+                    tr.innerHTML = `
+                        <td class="py-1 px-2 text-slate-500" colspan="6">${st.action}</td>
+                    `;
+                } else if (st.type === 'done') {
+                    tr.innerHTML = `
+                        <td class="py-1 px-2 text-slate-400">#${st.round}</td>
+                        <td class="py-1 px-2 text-emerald-400 font-bold">${st.gcd}</td>
+                        <td class="py-1 px-2 text-slate-500">-</td>
+                        <td class="py-1 px-2 text-slate-500">-</td>
+                        <td class="py-1 px-2 text-emerald-400 font-bold">สำเร็จ</td>
+                        <td class="py-1 px-2 text-emerald-400 font-bold">🎉 ห.ร.ม. คือ ${st.gcd}</td>
+                    `;
+                }
+                divisionTableBody.appendChild(tr);
+            });
+
+            if (statStep) {
+                const total = steps.length;
+                const cur = currentStepIndex >= 0 ? currentStepIndex + 1 : 0;
+                statStep.textContent = `${cur} / ${total}`;
+            }
+        }
+
+        function updateStatus(title, desc, type) {
+            if (statusTitle) statusTitle.textContent = title;
+            if (statusDesc) statusDesc.textContent = desc;
+
+            if (statusBadge) {
+                if (type === 'success') {
+                    statusBadge.className = 'mt-0.5 p-1.5 rounded-lg bg-emerald-500/20 text-emerald-400 shrink-0';
+                    statusBadge.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i>';
+                } else {
+                    statusBadge.className = 'mt-0.5 p-1.5 rounded-lg bg-cyan-500/20 text-cyan-400 shrink-0';
+                    statusBadge.innerHTML = '<i data-lucide="info" class="w-4 h-4"></i>';
+                }
+            }
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function resetSimulation() {
+            stopAutoPlay();
+            valA = Math.abs(parseInt(inputA.value, 10)) || 48;
+            valB = Math.abs(parseInt(inputB.value, 10)) || 18;
+
+            if (currentMode === 'brute') {
+                steps = computeBruteSteps(valA, valB);
+                highlightCode('brute', 2);
+                updateStatus('พร้อมจำลองแบบปกติ (Brute Force Loop)', `กำหนด min = ${Math.min(valA, valB)} แล้ววนลูป for (int i = min; i >= 1; i--) ตรวจเศษทีละตัว`, 'info');
+                if (tableHead) {
+                    tableHead.innerHTML = `
+                        <tr class="text-slate-400 border-b border-slate-800">
+                            <th class="py-1.5 px-2 font-mono">รอบ</th>
+                            <th class="py-1.5 px-2 font-mono text-amber-300">ตัวหาร (i)</th>
+                            <th class="py-1.5 px-2 font-mono">a % i</th>
+                            <th class="py-1.5 px-2 font-mono">b % i</th>
+                            <th class="py-1.5 px-2 font-mono text-emerald-300">ผลการตรวจ</th>
+                            <th class="py-1.5 px-2 font-mono">รายละเอียด</th>
+                        </tr>
+                    `;
+                }
+                if (tableBadgeMode) tableBadgeMode.textContent = 'Mode: Brute Force (O(min))';
+            } else if (currentMode === 'modulo') {
+                steps = computeModuloSteps(valA, valB);
+                highlightCode('modulo', 1);
+                updateStatus('พร้อมจำลองแบบหารเอาเศษ (%)', `กำหนด a = ${valA}, b = ${valB} เข้าสู่ลูป while (b != 0) ด้วยตัวแปร t`, 'info');
+                if (tableHead) {
+                    tableHead.innerHTML = `
+                        <tr class="text-slate-400 border-b border-slate-800">
+                            <th class="py-1.5 px-2 font-mono">รอบ</th>
+                            <th class="py-1.5 px-2 font-mono">a (ก่อน)</th>
+                            <th class="py-1.5 px-2 font-mono">b (ก่อน)</th>
+                            <th class="py-1.5 px-2 font-mono text-amber-300">t = b</th>
+                            <th class="py-1.5 px-2 font-mono text-cyan-300">b = a % b</th>
+                            <th class="py-1.5 px-2 font-mono">การเปลี่ยนค่าตัวแปร</th>
+                        </tr>
+                    `;
+                }
+                if (tableBadgeMode) tableBadgeMode.textContent = 'Mode: Modulo (%)';
+            } else {
+                steps = computeSubtractionSteps(valA, valB);
+                highlightCode('subtraction', 1);
+                updateStatus('พร้อมจำลองแบบลบซ้ำ (-)', `กำหนด a = ${valA}, b = ${valB} เข้าสู่ลูป while (a != b) เพื่อลบตัวมากลงเรื่อยๆ`, 'info');
+                if (tableHead) {
+                    tableHead.innerHTML = `
+                        <tr class="text-slate-400 border-b border-slate-800">
+                            <th class="py-1.5 px-2 font-mono">รอบ</th>
+                            <th class="py-1.5 px-2 font-mono">a</th>
+                            <th class="py-1.5 px-2 font-mono">b</th>
+                            <th class="py-1.5 px-2 font-mono text-slate-500">-</th>
+                            <th class="py-1.5 px-2 font-mono text-amber-300">ผลต่าง |a - b|</th>
+                            <th class="py-1.5 px-2 font-mono">การดำเนินการ</th>
+                        </tr>
+                    `;
+                }
+                if (tableBadgeMode) tableBadgeMode.textContent = 'Mode: Subtraction (-)';
+            }
+
+            currentStepIndex = -1;
+            if (resGcd) resGcd.textContent = '-';
+            if (resLcm) resLcm.textContent = '-';
+            if (resRounds) resRounds.textContent = `${steps.length - 1} รอบ`;
+            if (resT) resT.textContent = '-';
+            if (resOp) resOp.textContent = '-';
+
+            drawCanvas(null);
+            renderTable();
+        }
+
+        function stepSimulation() {
+            if (currentStepIndex + 1 >= steps.length) {
+                stopAutoPlay();
+                return;
+            }
+
+            currentStepIndex++;
+            const step = steps[currentStepIndex];
+
+            if (step.type === 'step') {
+                playSound('step');
+                if (currentMode === 'brute') {
+                    highlightCode('brute', 4);
+                    if (resT) resT.textContent = `i = ${step.i}`;
+                    if (resOp) resOp.textContent = `${step.a}%${step.i}=${step.remA}, ${step.b}%${step.i}=${step.remB}`;
+                    updateStatus(
+                        `รอบที่ #${step.round}: ตรวจสอบ i = ${step.i}`,
+                        `ทดสอบเงื่อนไข (${step.a} % ${step.i} == 0 && ${step.b} % ${step.i} == 0) -> ${step.isDivisible ? 'ลงตัวทั้งคู่!' : 'ยังไม่ลงตัว ขยับ i-- ต่อไป'}`,
+                        'info'
+                    );
+                } else if (currentMode === 'modulo') {
+                    highlightCode('modulo', 5);
+                    if (resT) resT.textContent = step.t;
+                    if (resOp) resOp.textContent = `${step.a} % ${step.b} = ${step.rem}`;
+                    updateStatus(
+                        `รอบที่ #${step.round}: t = ${step.t}, b = ${step.a} % ${step.b} = ${step.rem}`,
+                        `เก็บค่าเดิมของ b (${step.b}) ลงในตัวแปร t จากนั้นคำนวณเศษ แล้วนำ t ไปแทนที่ a: เกิดคู่ตัวเลขใหม่ (a=${step.nextA}, b=${step.nextB})`,
+                        'info'
+                    );
+                } else {
+                    highlightCode('subtraction', step.executedBranch === 'a_greater' ? 4 : 6);
+                    if (resT) resT.textContent = '-';
+                    if (resOp) resOp.textContent = step.action;
+                    updateStatus(
+                        `รอบที่ #${step.round}: ${step.action}`,
+                        `เนื่องจาก a (${step.a}) และ b (${step.b}) ยังไม่เท่ากัน จึงลบตัวมากลงด้วยตัวน้อย`,
+                        'info'
+                    );
+                }
+                drawCanvas(step);
+            } else if (step.type === 'done') {
+                playSound('done');
+                if (currentMode === 'brute') {
+                    highlightCode('brute', 5);
+                    const line10 = document.getElementById('brute-line-10');
+                    if (line10) line10.classList.add('code-highlight');
+                } else if (currentMode === 'modulo') {
+                    highlightCode('modulo', 8);
+                    const line11 = document.getElementById('mod-line-11');
+                    if (line11) line11.classList.add('code-highlight');
+                } else {
+                    highlightCode('subtraction', 9);
+                    const line12 = document.getElementById('sub-line-12');
+                    if (line12) line12.classList.add('code-highlight');
+                }
+
+                const gcdResult = step.gcd;
+                const lcmResult = (valA === 0 || valB === 0 || gcdResult === 0) ? 0 : Math.round((valA / gcdResult) * valB);
+
+                if (resGcd) resGcd.textContent = gcdResult;
+                if (resLcm) resLcm.textContent = lcmResult.toLocaleString();
+                if (resOp) resOp.textContent = `LCM: (${valA} / ${gcdResult}) × ${valB}`;
+
+                updateStatus(
+                    `🎉 สิ้นสุดขั้นตอนวิธี: ห.ร.ม. คือ ${gcdResult} | ค.ร.น. คือ ${lcmResult}`,
+                    `คำนวณ ค.ร.น. จากสูตรป้องกัน Overflow: lcm = (a / gcd) * b = (${valA} / ${gcdResult}) * ${valB} = ${lcmResult}`,
+                    'success'
+                );
+                drawCanvas(step);
+                stopAutoPlay();
+            }
+
+            renderTable();
+        }
+
+        function startAutoPlay() {
+            if (currentStepIndex + 1 >= steps.length) {
+                resetSimulation();
+            }
+            isRunning = true;
+            if (btnPlay) {
+                btnPlay.classList.remove('bg-cyan-600', 'hover:bg-cyan-500');
+                btnPlay.classList.add('bg-amber-600', 'hover:bg-amber-500');
+                btnPlay.innerHTML = '<i data-lucide="pause" class="w-4 h-4"></i> พักจำลอง';
+            }
+            if (window.lucide) lucide.createIcons();
+
+            const spd = sliderSpeed ? parseInt(sliderSpeed.value, 10) : 600;
+            timer = setInterval(() => {
+                stepSimulation();
+            }, spd);
+        }
+
+        function stopAutoPlay() {
+            isRunning = false;
+            if (timer) {
+                clearInterval(timer);
+                timer = null;
+            }
+            if (btnPlay) {
+                btnPlay.classList.remove('bg-amber-600', 'hover:bg-amber-500');
+                btnPlay.classList.add('bg-cyan-600', 'hover:bg-cyan-500');
+                btnPlay.innerHTML = '<i data-lucide="play" class="w-4 h-4"></i> จำลองอัตโนมัติ';
+            }
+            if (window.lucide) lucide.createIcons();
+        }
+
+        if (modeBtnBrute) {
+            modeBtnBrute.addEventListener('click', () => {
+                if (currentMode === 'brute') return;
+                currentMode = 'brute';
+                modeBtnBrute.className = 'px-2.5 py-1 font-semibold rounded-md bg-amber-600 text-white transition-all flex items-center gap-1.5';
+                modeBtnModulo.className = 'px-2.5 py-1 font-semibold rounded-md text-slate-400 hover:text-white transition-all flex items-center gap-1.5';
+                modeBtnSubtraction.className = 'px-2.5 py-1 font-semibold rounded-md text-slate-400 hover:text-white transition-all flex items-center gap-1.5';
+
+                codeBoxBrute.classList.remove('hidden');
+                codeBoxModulo.classList.add('hidden');
+                codeBoxSubtraction.classList.add('hidden');
+
+                codeFilename.textContent = 'gcd_brute.cpp';
+                codeBadge.textContent = 'Brute Force Loop';
+                labelComplexityBadge.textContent = 'O(min(a, b))';
+                vizTitle.innerHTML = '<span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span> จำลองแบบปกติ (Brute Force Loop) - วนถอยหลังจาก min';
+                vizSubtitle.textContent = 'ทำงานผ่าน int min = a < b ? a : b; for (int i = min; i >= 1; i--) if (a%i==0 && b%i==0)';
+
+                resetSimulation();
+            });
+        }
+
+        if (modeBtnModulo) {
+            modeBtnModulo.addEventListener('click', () => {
+                if (currentMode === 'modulo') return;
+                currentMode = 'modulo';
+                modeBtnModulo.className = 'px-2.5 py-1 font-semibold rounded-md bg-cyan-600 text-white transition-all flex items-center gap-1.5';
+                modeBtnBrute.className = 'px-2.5 py-1 font-semibold rounded-md text-slate-400 hover:text-white transition-all flex items-center gap-1.5';
+                modeBtnSubtraction.className = 'px-2.5 py-1 font-semibold rounded-md text-slate-400 hover:text-white transition-all flex items-center gap-1.5';
+
+                codeBoxBrute.classList.add('hidden');
+                codeBoxModulo.classList.remove('hidden');
+                codeBoxSubtraction.classList.add('hidden');
+
+                codeFilename.textContent = 'gcd_modulo.cpp';
+                codeBadge.textContent = 'Modulo (%) Loop';
+                labelComplexityBadge.textContent = 'O(log min(a, b))';
+                vizTitle.innerHTML = '<span class="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span> จำลองแบบหารเอาเศษ (Modulo %) - ใช้ตัวแปร t สลับค่า';
+                vizSubtitle.textContent = 'ทำงานผ่าน while (b != 0) ด้วย t = b; b = a % b; a = t;';
+
+                resetSimulation();
+            });
+        }
+
+        if (modeBtnSubtraction) {
+            modeBtnSubtraction.addEventListener('click', () => {
+                if (currentMode === 'subtraction') return;
+                currentMode = 'subtraction';
+                modeBtnSubtraction.className = 'px-2.5 py-1 font-semibold rounded-md bg-rose-600 text-white transition-all flex items-center gap-1.5';
+                modeBtnBrute.className = 'px-2.5 py-1 font-semibold rounded-md text-slate-400 hover:text-white transition-all flex items-center gap-1.5';
+                modeBtnModulo.className = 'px-2.5 py-1 font-semibold rounded-md text-slate-400 hover:text-white transition-all flex items-center gap-1.5';
+
+                codeBoxBrute.classList.add('hidden');
+                codeBoxModulo.classList.add('hidden');
+                codeBoxSubtraction.classList.remove('hidden');
+
+                codeFilename.textContent = 'gcd_subtract.cpp';
+                codeBadge.textContent = 'Subtraction (-) Loop';
+                labelComplexityBadge.textContent = 'O(max(a, b))';
+                vizTitle.innerHTML = '<span class="w-2 h-2 rounded-full bg-rose-400 animate-ping"></span> จำลองแบบลบซ้ำ (Subtraction -) - ลบตัวมากลงทีละตัวน้อย';
+                vizSubtitle.textContent = 'ทำงานผ่าน while (a != b) ด้วย if (a > b) a -= b; else b -= a;';
+
+                resetSimulation();
+            });
+        }
+
+        // Presets Buttons
+        document.querySelectorAll('.preset-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                inputA.value = btn.dataset.a;
+                inputB.value = btn.dataset.b;
+                resetSimulation();
+            });
+        });
+
+        // Sound Toggle Button
+        if (btnToggleSound) {
+            btnToggleSound.addEventListener('click', () => {
+                soundEnabled = !soundEnabled;
+                if (soundIcon) {
+                    soundIcon.setAttribute('data-lucide', soundEnabled ? 'volume-2' : 'volume-x');
+                    if (window.lucide) lucide.createIcons();
+                }
+            });
+        }
+
+        // Playback Buttons
+        if (btnPlay) {
+            btnPlay.addEventListener('click', () => {
+                if (isRunning) stopAutoPlay();
+                else startAutoPlay();
+            });
+        }
+
+        if (btnStep) {
+            btnStep.addEventListener('click', () => {
+                stopAutoPlay();
+                stepSimulation();
+            });
+        }
+
+        if (btnReset) btnReset.addEventListener('click', resetSimulation);
+        if (inputA) inputA.addEventListener('input', resetSimulation);
+        if (inputB) inputB.addEventListener('input', resetSimulation);
+
+        if (sliderSpeed) {
+            sliderSpeed.addEventListener('input', () => {
+                if (isRunning) {
+                    stopAutoPlay();
+                    startAutoPlay();
+                }
+            });
+        }
+
+        const snippetBrute = `#include <iostream>
+using namespace std;
+
+// แบบปกติ: หาค่า min แล้วนับถอยหลังลงมาทีละ 1 ตรวจเศษ
+int gcd(int a, int b) {
+    int min = a < b ? a : b;
+    for (int i = min; i >= 1; i--) {
+        if (a % i == 0 && b % i == 0) {
+            return i;
+        }
+    }
+    return 1;
+}
+
+// หา ค.ร.น. ด้วยสูตรป้องกัน integer overflow
+int lcm(int a, int b) {
+    if (a == 0 || b == 0) return 0;
+    return (a / gcd(a, b)) * b;
+}
+
+int main() {
+    int x, y;
+    if (cin >> x >> y) {
+        int g = gcd(x, y);
+        int l = lcm(x, y);
+        cout << "ห.ร.ม. คือ: " << g << "\\n";
+        cout << "ค.ร.น. คือ: " << l << "\\n";
+    }
+    return 0;
+}`;
+
+        const snippetModulo = `#include <iostream>
+using namespace std;
+
+// ขั้นตอนวิธียุคลิดแบบหารเอาเศษ (Modulo %)
+int gcdEuclid(int a, int b) {
+    int t;
+    while (b != 0) {
+        t = b;
+        b = a % b;
+        a = t;
+    }
+    return a;
+}
+
+// หา ค.ร.น. จากผลลัพธ์ของ gcd (หารก่อนแล้วค่อยคูณ เพื่อไม่ให้ int ล้น)
+int lcm(int a, int b) {
+    if (a == 0 || b == 0) return 0;
+    return (a / gcdEuclid(a, b)) * b;
+}
+
+int main() {
+    int x, y;
+    if (cin >> x >> y) {
+        int g = gcdEuclid(x, y);
+        int l = lcm(x, y);
+        cout << "ห.ร.ม. คือ: " << g << "\\n";
+        cout << "ค.ร.น. คือ: " << l << "\\n";
+    }
+    return 0;
+}`;
+
+        const snippetSubtraction = `#include <iostream>
+using namespace std;
+
+// ขั้นตอนวิธียุคลิดแบบลบซ้ำ (Subtraction -)
+int gcdSubtract(int a, int b) {
+    if (a <= 0 || b <= 0) return 0;
+    while (a != b) {
+        if (a > b) {
+            a = a - b;
+        } else {
+            b = b - a;
+        }
+    }
+    return a;
+}
+
+// หา ค.ร.น.
+int lcm(int a, int b) {
+    if (a == 0 || b == 0) return 0;
+    return (a / gcdSubtract(a, b)) * b;
+}
+
+int main() {
+    int x, y;
+    if (cin >> x >> y) {
+        int g = gcdSubtract(x, y);
+        int l = lcm(x, y);
+        cout << "ห.ร.ม. คือ: " << g << "\\n";
+        cout << "ค.ร.น. คือ: " << l << "\\n";
+    }
+    return 0;
+}`;
+
+        let currentActiveSnippet = snippetModulo;
+        const tabCodeBrute = document.getElementById('tab-code-brute');
+        const tabCodeMod = document.getElementById('tab-code-mod');
+        const tabCodeSub = document.getElementById('tab-code-sub');
+        const displayCodeBlock = document.getElementById('display-code-block');
+        const btnCopyCode = document.getElementById('btn-copy-code');
+        const copyToast = document.getElementById('copy-toast');
+        const copyBtnText = document.getElementById('copy-btn-text');
+
+        if (displayCodeBlock) displayCodeBlock.textContent = snippetModulo;
+
+        if (tabCodeBrute) {
+            tabCodeBrute.addEventListener('click', () => {
+                currentActiveSnippet = snippetBrute;
+                displayCodeBlock.textContent = snippetBrute;
+                tabCodeBrute.className = 'px-2.5 py-1 text-xs font-semibold rounded-lg bg-amber-600 text-white transition-all';
+                tabCodeMod.className = 'px-2.5 py-1 text-xs font-semibold rounded-lg text-slate-400 hover:text-white transition-all';
+                tabCodeSub.className = 'px-2.5 py-1 text-xs font-semibold rounded-lg text-slate-400 hover:text-white transition-all';
+            });
+        }
+
+        if (tabCodeMod) {
+            tabCodeMod.addEventListener('click', () => {
+                currentActiveSnippet = snippetModulo;
+                displayCodeBlock.textContent = snippetModulo;
+                tabCodeMod.className = 'px-2.5 py-1 text-xs font-semibold rounded-lg bg-cyan-600 text-white transition-all';
+                tabCodeBrute.className = 'px-2.5 py-1 text-xs font-semibold rounded-lg text-slate-400 hover:text-white transition-all';
+                tabCodeSub.className = 'px-2.5 py-1 text-xs font-semibold rounded-lg text-slate-400 hover:text-white transition-all';
+            });
+        }
+
+        if (tabCodeSub) {
+            tabCodeSub.addEventListener('click', () => {
+                currentActiveSnippet = snippetSubtraction;
+                displayCodeBlock.textContent = snippetSubtraction;
+                tabCodeSub.className = 'px-2.5 py-1 text-xs font-semibold rounded-lg bg-rose-600 text-white transition-all';
+                tabCodeBrute.className = 'px-2.5 py-1 text-xs font-semibold rounded-lg text-slate-400 hover:text-white transition-all';
+                tabCodeMod.className = 'px-2.5 py-1 text-xs font-semibold rounded-lg text-slate-400 hover:text-white transition-all';
+            });
+        }
+
+        if (btnCopyCode) {
+            btnCopyCode.addEventListener('click', () => {
+                const tempTextArea = document.createElement('textarea');
+                tempTextArea.value = currentActiveSnippet;
+                tempTextArea.style.position = 'fixed';
+                tempTextArea.style.left = '-9999px';
+                tempTextArea.style.top = '0';
+                document.body.appendChild(tempTextArea);
+                tempTextArea.focus();
+                tempTextArea.select();
+                try {
+                    document.execCommand('copy');
+                    if (copyBtnText) copyBtnText.textContent = 'คัดลอกสำเร็จ!';
+                    if (copyToast) {
+                        copyToast.classList.remove('hidden');
+                        setTimeout(() => {
+                            copyToast.classList.add('hidden');
+                            if (copyBtnText) copyBtnText.textContent = 'คัดลอกโค้ด';
+                        }, 2500);
+                    }
+                } catch (err) {
+                    console.error('Copy error:', err);
+                }
+                document.body.removeChild(tempTextArea);
+            });
+        }
+
+        // Initialize Simulator State
+        if (window.lucide) lucide.createIcons();
+        resetSimulation();
+    });
+    </script>
+</body>
+</html>
