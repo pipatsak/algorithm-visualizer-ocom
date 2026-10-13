@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>สื่อจำลองอัลกอริทึม - สอวน. คอมพิวเตอร์</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts Prompt -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Prompt', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between p-6 md:p-10 antialiased">
+
+    <!-- Header Section -->
+    <header class="max-w-4xl w-full mx-auto text-center space-y-3 mb-10">
+        <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-sm font-medium mb-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-indigo-400 animate-pulse"></span>
+            ค่าย 1 สอวน. คอมพิวเตอร์
+        </div>
+        <h1 class="text-3xl md:text-5xl font-bold text-white tracking-tight">สื่อจำลองขั้นตอนวิธี</h1>
+        <p class="text-base md:text-lg text-slate-400">ระบบจำลองการทำงานของอัลกอริทึมและโครงสร้างข้อมูลแบบอินเทอร์แอกทีฟ</p>
+    </header>
+
+    <!-- Main Content Menu Grid -->
+    <main class="max-w-4xl w-full mx-auto space-y-8 flex-1">
+        
+        <!-- หมวดที่ 1: Searching Algorithms -->
+        <section class="space-y-4">
+            <h2 class="text-lg font-bold text-indigo-400 flex items-center gap-2 border-b border-slate-800 pb-2">
+                <span class="w-3 h-3 rounded bg-indigo-500"></span> 1. การค้นหาข้อมูล (Searching Algorithms)
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <a href="sequential_search_interactive_visualizer-2.html" class="group bg-slate-900 hover:bg-slate-800/80 border border-slate-800 hover:border-indigo-500/50 p-5 rounded-2xl transition-all shadow-lg flex flex-col justify-between">
+                    <div>
+                        <h3 class="text-base font-bold text-white group-hover:text-indigo-300 transition-colors">Sequential Search</h3>
+                        <p class="text-sm text-slate-400 mt-1">จำลองการค้นหาแบบเชิงเส้นทีละตำแหน่ง O(N)</p>
+                    </div>
+                    <span class="text-xs text-indigo-400 font-semibold mt-4 flex items-center gap-1 group-hover:translate-x-1 transition-transform">เปิดใช้งานสื่อจำลอง &rarr;</span>
+                </a>
+
+                <a href="binary_search_interactive_visualizer.html" class="group bg-slate-900 hover:bg-slate-800/80 border border-slate-800 hover:border-cyan-500/50 p-5 rounded-2xl transition-all shadow-lg flex flex-col justify-between">
+                    <div>
+                        <h3 class="text-base font-bold text-white group-hover:text-cyan-300 transition-colors">Binary Search</h3>
+                        <p class="text-sm text-slate-400 mt-1">จำลองการค้นหาแบบทวิภาค แบ่งครึ่งช่วง O(log N)</p>
+                    </div>
+                    <span class="text-xs text-cyan-400 font-semibold mt-4 flex items-center gap-1 group-hover:translate-x-1 transition-transform">เปิดใช้งานสื่อจำลอง &rarr;</span>
+                </a>
+            </div>
+        </section>
+
+        <!-- หมวดที่ 2: Number Theory & Math -->
+        <section class="space-y-4">
+            <h2 class="text-lg font-bold text-cyan-400 flex items-center gap-2 border-b border-slate-800 pb-2">
+                <span class="w-3 h-3 rounded bg-cyan-500"></span> 2. ทฤษฎีจำนวนและคณิตศาสตร์ (Number Theory)
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <a href="gcd_lcm_simulator.html" class="group bg-slate-900 hover:bg-slate-800/80 border border-slate-800 hover:border-cyan-500/50 p-5 rounded-2xl transition-all shadow-lg flex flex-col justify-between">
+                    <div>
+                        <h3 class="text-base font-bold text-white group-hover:text-cyan-300 transition-colors">GCD & LCM Simulator</h3>
+                        <p class="text-sm text-slate-400 mt-1">จำลองการหา ห.ร.ม. (Euclidean Algorithm) และ ค.ร.น.</p>
+                    </div>
+                    <span class="text-xs text-cyan-400 font-semibold mt-4 flex items-center gap-1 group-hover:translate-x-1 transition-transform">เปิดใช้งานสื่อจำลอง &rarr;</span>
+                </a>
+
+                <a href="primality_test_simulator.html" class="group bg-slate-900 hover:bg-slate-800/80 border border-slate-800 hover:border-cyan-500/50 p-5 rounded-2xl transition-all shadow-lg flex flex-col justify-between">
+                    <div>
+                        <h3 class="text-base font-bold text-white group-hover:text-cyan-300 transition-colors">Primality Test Simulator</h3>
+                        <p class="text-sm text-slate-400 mt-1">ตรวจสอบจำนวนเฉพาะ (Prime Number Testing)</p>
+                    </div>
+                    <span class="text-xs text-cyan-400 font-semibold mt-4 flex items-center gap-1 group-hover:translate-x-1 transition-transform">เปิดใช้งานสื่อจำลอง &rarr;</span>
+                </a>
+
+                <a href="sieve_of_eratosthenes_visualizer.html" class="group bg-slate-900 hover:bg-slate-800/80 border border-slate-800 hover:border-cyan-500/50 p-5 rounded-2xl transition-all shadow-lg flex flex-col justify-between">
+                    <div>
+                        <h3 class="text-base font-bold text-white group-hover:text-cyan-300 transition-colors">Sieve of Eratosthenes</h3>
+                        <p class="text-sm text-slate-400 mt-1">ตะแกรงเอราทอสเทนีส ค้นหาจำนวนเฉพาะแบบรวดเร็ว</p>
+                    </div>
+                    <span class="text-xs text-cyan-400 font-semibold mt-4 flex items-center gap-1 group-hover:translate-x-1 transition-transform">เปิดใช้งานสื่อจำลอง &rarr;</span>
+                </a>
+
+                <a href="prime_factorization_visualizer.html" class="group bg-slate-900 hover:bg-slate-800/80 border border-slate-800 hover:border-cyan-500/50 p-5 rounded-2xl transition-all shadow-lg flex flex-col justify-between">
+                    <div>
+                        <h3 class="text-base font-bold text-white group-hover:text-cyan-300 transition-colors">Prime Factorization</h3>
+                        <p class="text-sm text-slate-400 mt-1">การแยกตัวประกอบเฉพาะ (Prime Factors)</p>
+                    </div>
+                    <span class="text-xs text-cyan-400 font-semibold mt-4 flex items-center gap-1 group-hover:translate-x-1 transition-transform">เปิดใช้งานสื่อจำลอง &rarr;</span>
+                </a>
+
+                <a href="fast_modular_exponentiation_visualizer.html" class="group bg-slate-900 hover:bg-slate-800/80 border border-slate-800 hover:border-cyan-500/50 p-5 rounded-2xl transition-all shadow-lg md:col-span-2 flex flex-col justify-between">
+                    <div>
+                        <h3 class="text-base font-bold text-white group-hover:text-cyan-300 transition-colors">Fast Modular Exponentiation</h3>
+                        <p class="text-sm text-slate-400 mt-1">การคำนวณเลขยกกำลังโมดูโลแบบรวดเร็ว $O(\log N)$</p>
+                    </div>
+                    <span class="text-xs text-cyan-400 font-semibold mt-4 flex items-center gap-1 group-hover:translate-x-1 transition-transform">เปิดใช้งานสื่อจำลอง &rarr;</span>
+                </a>
+            </div>
+        </section>
+
+        <!-- หมวดที่ 3: Utilities & Debugging -->
+        <section class="space-y-4">
+            <h2 class="text-lg font-bold text-emerald-400 flex items-center gap-2 border-b border-slate-800 pb-2">
+                <span class="w-3 h-3 rounded bg-emerald-500"></span> 3. เครื่องมือและการตรวจสอบข้อผิดพลาด (Utilities)
+            </h2>
+            <div class="grid grid-cols-1 gap-4">
+                <a href="testing_debugging_simulator.html" class="group bg-slate-900 hover:bg-slate-800/80 border border-slate-800 hover:border-emerald-500/50 p-5 rounded-2xl transition-all shadow-lg flex flex-col justify-between">
+                    <div>
+                        <h3 class="text-base font-bold text-white group-hover:text-emerald-300 transition-colors">Testing & Debugging Simulator</h3>
+                        <p class="text-sm text-slate-400 mt-1">จำลองการทดสอบระบบและดีบักโค้ดเพื่อหาข้อผิดพลาด</p>
+                    </div>
+                    <span class="text-xs text-emerald-400 font-semibold mt-4 flex items-center gap-1 group-hover:translate-x-1 transition-transform">เปิดใช้งานสื่อจำลอง &rarr;</span>
+                </a>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer Section -->
+    <footer class="max-w-4xl w-full mx-auto text-center mt-12 pt-6 border-t border-slate-900">
+        <p class="text-xs text-slate-500 tracking-wider">
+            Designed & Developed by Pipatsak Chaiyawong
+        </p>
+    </footer>
+
+</body>
+</html>
